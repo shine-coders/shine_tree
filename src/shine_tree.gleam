@@ -1,16 +1,17 @@
 import gleam/iterator.{type Iterator, Done, Next}
 import gleam/list.{type ContinueOrStop, Continue, Stop}
-import gleam/option.{type Option, None, Some}
 import gleam/result.{map}
-import pprint
-import simplifile
 
+/// An ordered tree of values used to implement other kinds of data
+/// structures like queues. Elements can be added or removed from the
+/// head or tail of the tree in nearly constant time.
 pub opaque type ShineTree(u) {
   Empty
   Single(u)
   Deep(size: Int, pf: Node(u), root: ShineTree(Node(u)), sf: Node(u))
 }
 
+/// A collection of up to 4 items
 type Node(u) {
   One(u)
   Two(u, u)
@@ -18,20 +19,33 @@ type Node(u) {
   Four(u, u, u, u)
 }
 
-pub fn reduce_l(tree: ShineTree(u), v, f: fn(v, u) -> v) -> v {
+/// Reduces all the elements of the given tree into a single value,
+/// made by calling a given function on all the elements, traversing
+/// the tree from left to right.
+///
+/// `fold_l(shine_tree.from_list([1, 2, 3]), 0, int.add)` is the equivalent of
+/// `add(add(add(0, 1), 2), 3)`.
+///
+/// ```gleam
+/// // calculate 20! (factorial)
+/// let n = 20
+/// shine_tree.fold_l(shine_tree.range(2, n), int.multiply)
+/// // -> 2432902008176640000
+/// ```
+pub fn fold_l(over tree: ShineTree(u), from v, with f: fn(v, u) -> v) -> v {
   case tree {
     Empty -> v
     Single(u) -> f(v, u)
     Deep(_, pf, root, sf) -> {
       v
-      |> reduce_l_node(pf, f)
-      |> reduce_l_root(root, f)
-      |> reduce_l_node(sf, f)
+      |> fold_l_node(pf, f)
+      |> fold_l_root(root, f)
+      |> fold_l_node(sf, f)
     }
   }
 }
 
-fn reduce_l_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
+fn fold_l_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   case node {
     One(w) -> f(v, w)
     Two(w, x) ->
@@ -52,25 +66,38 @@ fn reduce_l_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   }
 }
 
-fn reduce_l_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
-  use acc, node <- reduce_l(root, acc)
-  reduce_l_node(acc, node, f)
+fn fold_l_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
+  use acc, node <- fold_l(root, acc)
+  fold_l_node(acc, node, f)
 }
 
-pub fn reduce_r(tree: ShineTree(u), v, f: fn(v, u) -> v) -> v {
+/// Reduces all the elements of the given tree into a single value,
+/// made by calling a given function on all the elements, traversing
+/// the tree from left to right.
+///
+/// `fold_r(shine_tree.from_list([1, 2, 3]), 0, int.add)` is the equivalent of
+/// `add(add(add(0, 3), 2), 1)`.
+///
+/// ```gleam
+/// // calculate 20! (factorial)
+/// let n = 20
+/// shine_tree.fold_r(shine_tree.range(2, n), int.multiply)
+/// // -> 2432902008176640000
+/// ```
+pub fn fold_r(tree: ShineTree(u), v, f: fn(v, u) -> v) -> v {
   case tree {
     Empty -> v
     Single(u) -> f(v, u)
     Deep(_, pf, root, sf) -> {
       v
-      |> reduce_r_node(sf, f)
-      |> reduce_r_root(root, f)
-      |> reduce_r_node(pf, f)
+      |> fold_r_node(sf, f)
+      |> fold_r_root(root, f)
+      |> fold_r_node(pf, f)
     }
   }
 }
 
-fn reduce_r_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
+fn fold_r_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   case node {
     One(w) -> f(v, w)
     Two(w, x) ->
@@ -91,12 +118,20 @@ fn reduce_r_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   }
 }
 
-fn reduce_r_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
-  use acc, node <- reduce_r(root, acc)
-  reduce_r_node(acc, node, f)
+fn fold_r_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
+  use acc, node <- fold_r(root, acc)
+  fold_r_node(acc, node, f)
 }
 
-pub fn map(tree: ShineTree(u), f: fn(u) -> v) -> ShineTree(v) {
+/// Maps all the elements of the given tree into a new tree where
+/// each element has been transformed by the given function.
+/// 
+/// ```gleam
+/// let tree = shine_tree.from_list([1, 2, 3])
+/// shine_tree.map(tree, int.multiply(2, _))
+/// // -> shine_tree.from_list([2, 4, 6])
+/// ```
+pub fn map(tree: ShineTree(u), with f: fn(u) -> v) -> ShineTree(v) {
   case tree {
     Empty -> Empty
     Single(u) -> Single(f(u))
@@ -123,6 +158,13 @@ fn map_root(root: ShineTree(Node(u)), f: fn(u) -> v) -> ShineTree(Node(v)) {
   map_node(node, f)
 }
 
+/// Pushes an element to the end of the given tree.
+/// 
+/// ```gleam
+/// let tree = shine_tree.from_list([1, 2, 3])
+/// shine_tree.push(tree, 4)
+/// // -> shine_tree.from_list([1, 2, 3, 4])
+/// ```
 pub fn push(tree: ShineTree(u), value: u) -> ShineTree(u) {
   case tree {
     Empty -> Single(value)
@@ -137,37 +179,15 @@ pub fn push(tree: ShineTree(u), value: u) -> ShineTree(u) {
   }
 }
 
-pub fn push2(tree: ShineTree(u), a: u, b: u) {
-  case tree {
-    Empty -> Deep(2, One(a), Empty, One(b))
-    Single(u) -> Deep(3, One(u), Empty, Two(a, b))
-    Deep(count, pr, root, sf) ->
-      Deep(count + 2, pr, root |> push(sf), Two(a, b))
-  }
-}
+const push_rec = push
 
-pub fn push3(tree: ShineTree(u), a: u, b: u, c: u) {
-  case tree {
-    Empty -> Deep(3, One(a), Empty, Two(b, c))
-    Single(u) -> Deep(4, Two(u, a), Empty, Two(b, c))
-    Deep(count, pr, root, sf) ->
-      Deep(count + 3, pr, root |> push(sf), Three(a, b, c))
-  }
-}
-
-pub fn push4(tree: ShineTree(u), a: u, b: u, c: u, d: u) {
-  case tree {
-    Empty -> Deep(3, Two(a, b), Empty, Two(c, d))
-    Single(u) -> Deep(5, Three(u, a, b), Empty, Two(c, d))
-    Deep(count, pr, root, sf) ->
-      Deep(count + 4, pr, root |> push(sf), Four(a, b, c, d))
-  }
-}
-
-fn push_rec(root: ShineTree(Node(u)), val: Node(u)) {
-  push(root, val)
-}
-
+/// Pushes an element to the beginning of the given tree.
+/// 
+/// ```gleam
+/// let tree = shine_tree.from_list([1, 2, 3])
+/// shine_tree.unshift(tree, 0)
+/// // -> shine_tree.from_list([0, 1, 2, 3])
+/// ```
 pub fn unshift(tree: ShineTree(u), value: u) -> ShineTree(u) {
   case tree {
     Empty -> Single(value)
@@ -182,37 +202,24 @@ pub fn unshift(tree: ShineTree(u), value: u) -> ShineTree(u) {
   }
 }
 
-fn unshift_rec(root: ShineTree(Node(u)), val: Node(u)) {
-  push(root, val)
-}
+const unshift_rec = unshift
 
-pub fn unshift2(tree: ShineTree(u), a: u, b: u) {
-  case tree {
-    Empty -> Deep(2, One(a), Empty, One(b))
-    Single(u) -> Deep(3, Two(a, b), Empty, One(u))
-    Deep(count, pf, root, sf) ->
-      Deep(count + 2, Two(a, b), root |> unshift(pf), sf)
-  }
-}
-
-pub fn unshift3(tree: ShineTree(u), a: u, b: u, c: u) {
-  case tree {
-    Empty -> Deep(3, Two(a, b), Empty, One(c))
-    Single(u) -> Deep(4, Two(a, b), Empty, Two(c, u))
-    Deep(count, pf, root, sf) ->
-      Deep(count + 3, Three(a, b, c), root |> unshift(pf), sf)
-  }
-}
-
-pub fn unshift4(tree: ShineTree(u), a: u, b: u, c: u, d: u) {
-  case tree {
-    Empty -> Deep(4, Two(a, b), Empty, Two(c, d))
-    Single(u) -> Deep(5, Three(a, b, c), Empty, Two(d, u))
-    Deep(count, pf, root, sf) ->
-      Deep(count + 4, Four(a, b, c, d), root |> unshift(pf), sf)
-  }
-}
-
+/// Pops an element from the end of the given tree.
+/// 
+/// If there are no items, it returns `Error(Nil)`, otherwise
+/// it returns the popped item, and the resulting tree with the
+/// element removed.
+/// 
+/// ```gleam
+/// let tree = shine_tree.from_list([1, 2, 3])
+/// shine_tree.pop(tree)
+/// // -> Ok(3, shine_tree.from_list([1, 2]))
+/// ```
+/// 
+/// ```gleam
+/// shine_tree.empty |> shine_tree.pop
+/// // -> Error(Nil)
+/// ```
 pub fn pop(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
   case tree {
     Empty -> Error(Nil)
@@ -225,7 +232,7 @@ pub fn pop(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
     Deep(count, Four(v, w, x, y), Empty, One(u)) ->
       Ok(#(u, Deep(count - 1, Two(v, w), Empty, Two(x, y))))
     Deep(count, pf, root, One(u)) -> {
-      let assert Ok(#(sf, root)) = pop_root(root)
+      let assert Ok(#(sf, root)) = pop_rec(root)
       Ok(#(u, Deep(count - 1, pf, root, sf)))
     }
     Deep(count, pf, root, sf) -> {
@@ -235,9 +242,7 @@ pub fn pop(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
   }
 }
 
-fn pop_root(root: ShineTree(Node(u))) {
-  pop(root)
-}
+const pop_rec = pop
 
 fn pop_node(node: Node(u)) {
   case node {
@@ -248,6 +253,22 @@ fn pop_node(node: Node(u)) {
   }
 }
 
+/// Pops an element from the front of the given tree.
+/// 
+/// If there are no items, it returns `Error(Nil)`, otherwise
+/// it returns the popped item, and the resulting tree with the
+/// element removed.
+/// 
+/// ```gleam
+/// let tree = shine_tree.from_list([1, 2, 3])
+/// shine_tree.shift(tree)
+/// // -> Ok(1, shine_tree.from_list([2, 3]))
+/// ```
+/// 
+/// ```gleam
+/// shine_tree.empty |> shine_tree.pop
+/// // -> Error(Nil)
+/// ```
 pub fn shift(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
   case tree {
     Empty -> Error(Nil)
@@ -260,19 +281,17 @@ pub fn shift(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
     Deep(count, One(u), Empty, Four(v, w, x, y)) ->
       Ok(#(u, Deep(count - 1, Two(v, w), Empty, Two(x, y))))
     Deep(count, One(u), root, sf) -> {
-      let assert Ok(#(pf, root)) = shift_root(root)
+      let assert Ok(#(pf, root)) = shift_rec(root)
       Ok(#(u, Deep(count - 1, pf, root, sf)))
     }
     Deep(count, pf, root, sf) -> {
-      let assert Ok(#(u, sf)) = shift_node(sf)
+      let assert Ok(#(u, pf)) = shift_node(pf)
       Ok(#(u, Deep(count - 1, pf, root, sf)))
     }
   }
 }
 
-fn shift_root(root: ShineTree(Node(u))) {
-  shift(root)
-}
+const shift_rec = shift
 
 fn shift_node(node: Node(u)) {
   case node {
@@ -283,35 +302,44 @@ fn shift_node(node: Node(u)) {
   }
 }
 
-pub fn unfold(tree: ShineTree(u)) {
-  iterator.unfold(to_node_list(tree), do_unfold)
-}
-
-fn do_unfold(state: List(Node(u))) {
-  case state {
-    [] -> Done
-    [One(u), ..rest] -> Next(u, rest)
-    [Two(u, v), ..rest] -> Next(u, [One(v), ..rest])
-    [Three(u, v, w), ..rest] -> Next(u, [Two(v, w), ..rest])
-    [Four(u, v, w, x), ..rest] -> Next(u, [Three(v, w, x), ..rest])
+/// Creates an iterator from a given tree, yielding each element in succession until
+/// there are no elements left.
+///
+/// ## Examples
+///
+/// ```gleam
+/// let iter = unfold(shine_tree.from_list([1, 2, 3]))
+/// 
+/// let #(num, iter) = iterator.step(iter)
+/// // -> Next(1, Iterator(Int))
+/// let #(num, iter) = iterator.step(iter)
+/// // -> Next(2, Iterator(Int))
+/// let #(num, iter) = iterator.step(iter)
+/// // -> Next(3, Iterator(Int))
+/// let a = iterator.step(iter)
+/// // -> Done
+/// ```
+///
+pub fn to_iterator(tree: ShineTree(u)) {
+  use state <- iterator.unfold(tree)
+  case shift(state) {
+    Ok(#(item, next)) -> Next(item, next)
+    Error(Nil) -> Done
   }
 }
 
-fn to_node_list(tree: ShineTree(u)) {
-  case tree {
-    Empty -> []
-    Single(u) -> [One(u)]
-    Deep(_, pf, root, sf) -> [pf, ..reduce_r(root, [sf], do_add_node)]
-  }
-}
-
-fn do_add_node(acc: List(Node(u)), node: Node(u)) {
-  [node, ..acc]
-}
-
+/// Creates a new tree containing all the elements of the given tree,
+/// for which the given predicate returns `True`.
+/// 
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
+/// |> filter(int.is_odd)
+/// // -> shine_tree.from_list([1, 3, 5, 7])
+/// ```
+/// 
 pub fn filter(tree: ShineTree(u), f: fn(u) -> Bool) {
   {
-    use acc, u <- reduce_r(tree, [])
+    use acc, u <- fold_r(tree, [])
     case f(u) {
       True -> [u, ..acc]
       False -> acc
@@ -320,11 +348,27 @@ pub fn filter(tree: ShineTree(u), f: fn(u) -> Bool) {
   |> from_list
 }
 
+/// Creates a new list containing all the elements of the given tree.
+/// 
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
+/// |> to_list
+/// // -> [1, 2, 3, 4, 5, 6, 7]
+/// ```
+/// 
 pub fn to_list(tree: ShineTree(u)) {
-  use acc, u <- reduce_r(tree, [])
+  use acc, u <- fold_r(tree, [])
   [u, ..acc]
 }
 
+/// Creates a new tree containing all the elements of the given list.
+/// 
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
+/// // -> It's a ShineTree with all the items in it!
+/// // Were you expecting a list?
+/// ```
+/// 
 pub fn from_list(values: List(u)) {
   do_from_list(values)
 }
@@ -363,12 +407,21 @@ fn do_chunk_values(
 ) -> #(Node(u), List(Node(u)), Int) {
   case values {
     [] -> panic as "This is impossible!"
+    // this will NEVER happen
     [a] -> #(One(a), acc, count + 1)
+    //1 
     [a, b] -> #(Two(a, b), acc, count + 2)
+    //2
     [a, b, c] -> #(Three(a, b, c), acc, count + 3)
+    //3 
     [a, b, c, d] -> #(Four(a, b, c, d), acc, count + 4)
+    //4
     [a, b, c, d, ..rest] ->
       do_chunk_values(rest, [Four(a, b, c, d), ..acc], count + 4)
+    // also 4, but recurse
+    //                      ^^^^^^^^^^^^^^ We just prepended the value?
+    // Yes. That means the first four items (as a node) (that we inserted) are at the END of the linked list
+    // Got it :)
   }
 }
 
@@ -395,7 +448,6 @@ fn do_from_list_reverse(value: List(u)) -> ShineTree(u) {
     [a, b, c, d, ..rest] -> {
       let tail = Four(d, c, b, a)
       let #(head, nodes, count) = do_chunk_values_reverse(rest, [], 4)
-
       Deep(count, head, do_from_list(nodes), tail)
     }
   }
@@ -411,14 +463,6 @@ fn do_chunk_values_reverse(items: List(u), acc: List(Node(u)), count: Int) {
     [a, b, c, d, ..rest] ->
       do_chunk_values_reverse(rest, [Four(d, c, b, a), ..acc], count + 4)
   }
-}
-
-pub fn main() {
-  iterator.range(0, 1000)
-  |> iterator.to_list
-  |> from_list
-  |> pprint.format
-  |> simplifile.write("./test.txt", _)
 }
 
 pub fn from_iterator(iterable: Iterator(u)) -> ShineTree(u) {
@@ -544,6 +588,25 @@ pub fn size(tree: ShineTree(u)) {
   }
 }
 
+/// Returns `true` if the predicate `f` returns `True` for each
+/// element in the ShineTree. Returns `False` otherwise.
+/// 
+/// ## Examples
+///
+/// ```gleam
+/// shine_tree.all(shine_tree.empty, fn(x) { x == 0 })
+/// // -> True
+/// ```
+///
+/// ```gleam
+/// all(shine_tree.from_list([-1, -42]), fn(x) { x < 0 })
+/// // -> True
+/// ```
+///
+/// ```gleam
+/// all(shine_tree.from_list([2, 4, 6, 8, 10, 11]), int.is_even)
+/// // -> False
+/// ```
 pub fn all(tree: ShineTree(u), f: fn(u) -> Bool) {
   case tree {
     Empty -> True
@@ -556,9 +619,7 @@ pub fn all(tree: ShineTree(u), f: fn(u) -> Bool) {
   }
 }
 
-fn all_rec(tree: ShineTree(u), f: fn(u) -> Bool) {
-  all(tree, f)
-}
+const all_rec = all
 
 fn all_node(node: Node(u), f: fn(u) -> Bool) {
   case node {
@@ -569,6 +630,26 @@ fn all_node(node: Node(u), f: fn(u) -> Bool) {
   }
 }
 
+/// Returns `True` if the predicate `f` returns `True` for any
+/// element in the ShineTree. Returns `False` otherwise.
+/// 
+/// ## Examples
+///
+/// ```gleam
+/// // No items in the tree will always be false
+/// any(shine_tree.empty, int.is_even)
+/// // -> False
+/// ```
+///
+/// ```gleam
+/// any([10, 32, 42, 43, 44], fn(x) { x == 42 })
+/// // -> True
+/// ```
+/// 
+/// ```gleam
+/// any([3, 4], fn(x) { x + 1 == 42 })
+/// // -> False
+/// ```
 pub fn any(tree: ShineTree(u), f: fn(u) -> Bool) {
   case tree {
     Empty -> False
@@ -599,8 +680,19 @@ pub fn contains(tree: ShineTree(u), u) {
   v == u
 }
 
-pub fn count(tree: ShineTree(u), f: fn(u) -> Bool) {
-  use acc, u <- reduce_l(tree, 0)
+/// Counts the number of elements in a given ShineTree satisfying a given predicate.
+///
+/// This function has to traverse the entire tree to determine the number of elements,
+/// so it runs in linear time.
+/// 
+/// ## Examples
+/// 
+/// ```gleam
+/// count(shine_tree.from_list([2, 3, 4, 5, 6, 7, 8, 9, 10]), int.is_even)
+/// // -> 5
+/// ```
+pub fn count(tree: ShineTree(u), where f: fn(u) -> Bool) {
+  use acc, u <- fold_l(tree, 0)
   case f(u) {
     True -> acc + 1
     False -> acc
@@ -613,63 +705,206 @@ fn unwrap_fold_until(v: ContinueOrStop(v)) {
   }
 }
 
-pub fn fold_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) -> v {
+/// Fold a given value over the items of a given tree, starting with the beginning until the
+/// given function returns `Stop`.
+/// 
+/// The accumulated value is then returned.
+/// 
+/// ## Examples
+/// 
+/// ```gleam
+/// fold_until(shine_tree.from_list([2, 3, 4, 5, 6, 7, 8, 9, 10]), 0, fn(acc, x) {
+///   case x {
+///     5 -> Stop(acc + 1)
+///     _ -> Continue(acc + x)
+///   }
+/// })
+/// // -> 10
+pub fn fold_until(
+  tree: ShineTree(u),
+  v,
+  with f: fn(v, u) -> ContinueOrStop(v),
+) -> v {
   do_fold_until(tree, v, f) |> unwrap_fold_until
 }
 
 fn do_fold_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case tree {
-    Empty -> Stop(v)
+    Empty -> Continue(v)
     Single(u) -> f(v, u)
     Deep(_, pf, root, sf) -> {
-      case do_fold_node_until(pf, v, f) {
-        Continue(v) -> {
-          let deep_fold = {
-            use v, node <- do_fold_until_rec(root, v)
-            do_fold_node_until(node, v, f)
-          }
-          case deep_fold {
-            Continue(v) -> do_fold_node_until(sf, v, f)
-            v -> v
-          }
-        }
-        v -> v
-      }
+      use v <- try_continue(do_fold_node_until(pf, v, f))
+      use v <- try_continue({
+        use v, node <- do_fold_until_rec(root, v)
+        do_fold_node_until(node, v, f)
+      })
+      do_fold_node_until(sf, v, f)
     }
   }
 }
 
 const do_fold_until_rec = do_fold_until
 
+fn try_continue(v: ContinueOrStop(v), f: fn(v) -> ContinueOrStop(v)) {
+  case v {
+    Continue(v) -> f(v)
+    v -> v
+  }
+}
+
 fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case node {
     One(a) -> f(v, a)
-    Two(a, b) ->
-      case f(v, a) {
-        Continue(v) -> f(v, b)
-        v -> v
-      }
-    Three(a, b, c) ->
-      case f(v, a) {
-        Continue(v) ->
-          case f(v, b) {
-            Continue(v) -> f(v, c)
-            v -> v
-          }
-        v -> v
-      }
-    Four(a, b, c, d) ->
-      case f(v, a) {
-        Continue(v) ->
-          case f(v, b) {
-            Continue(v) ->
-              case f(v, c) {
-                Continue(v) -> f(v, d)
-                v -> v
-              }
-            v -> v
-          }
-        v -> v
+    Two(a, b) -> {
+      use v <- try_continue(f(v, a))
+      f(v, b)
+    }
+
+    Three(a, b, c) -> {
+      use v <- try_continue(f(v, a))
+      use v <- try_continue(f(v, b))
+      f(v, c)
+    }
+    Four(a, b, c, d) -> {
+      use v <- try_continue(f(v, a))
+      use v <- try_continue(f(v, b))
+      use v <- try_continue(f(v, c))
+      f(v, d)
+    }
+  }
+}
+
+/// Creates a tree of `n` consecutive integers, starting from `start`.
+/// and finishing with `finish`.
+/// 
+/// ## Examples
+/// 
+/// ```gleam
+/// let ten_items = shine_tree.range(1, 10)
+/// ```
+/// 
+pub fn range(start: Int, finish: Int) {
+  case finish - start {
+    // TODO: make this algorithm backwards instead of calling reverse
+    val if val < 0 -> range(finish, start) |> reverse
+    0 -> Single(start)
+    1 -> Deep(2, One(start), Empty, One(finish))
+    2 -> Deep(3, range_2(start), Empty, One(finish))
+    3 -> Deep(4, Two(start, start + 1), Empty, Two(start + 2, finish))
+    4 ->
+      Deep(5, Three(start, start + 1, start + 2), Empty, Two(start + 3, finish))
+
+    5 ->
+      Deep(
+        6,
+        Three(start, start + 1, start + 2),
+        Empty,
+        Three(start + 3, start + 4, finish),
+      )
+    6 ->
+      Deep(
+        7,
+        Four(start, start + 1, start + 2, start + 3),
+        Empty,
+        Three(start + 4, start + 5, finish),
+      )
+    7 ->
+      Deep(
+        8,
+        Four(start, start + 1, start + 2, start + 3),
+        Empty,
+        Four(start + 4, start + 5, start + 6, finish),
+      )
+    8 ->
+      Deep(
+        9,
+        Four(start, start + 1, start + 2, start + 3),
+        Single(One(start + 4)),
+        Four(start + 5, start + 6, start + 7, finish),
+      )
+    9 ->
+      Deep(
+        10,
+        Four(start, start + 1, start + 2, start + 3),
+        Single(Two(start + 4, start + 5)),
+        Four(start + 6, start + 7, start + 8, finish),
+      )
+    10 ->
+      Deep(
+        11,
+        Four(start, start + 1, start + 2, start + 3),
+        Single(Three(start + 4, start + 5, start + 6)),
+        Four(start + 7, start + 8, start + 9, finish),
+      )
+
+    11 ->
+      Deep(
+        12,
+        Four(start, start + 1, start + 2, start + 3),
+        Single(Four(start + 4, start + 5, start + 6, start + 7)),
+        Four(start + 8, start + 9, start + 10, finish),
+      )
+
+    n ->
+      Deep(
+        n + 1,
+        range_4(start),
+        do_deep_range(start + 4, finish - 4, []),
+        range_4(finish - 3),
+      )
+  }
+}
+
+fn do_deep_range(
+  start: Int,
+  finish: Int,
+  acc: List(Node(Int)),
+) -> ShineTree(Node(Int)) {
+  case finish - start {
+    0 ->
+      [One(start), ..acc]
+      |> do_from_list_reverse
+    1 ->
+      [range_2(start), ..acc]
+      |> do_from_list_reverse
+    2 ->
+      [range_3(start), ..acc]
+      |> do_from_list_reverse
+    3 ->
+      [range_4(start), ..acc]
+      |> do_from_list_reverse
+    4 ->
+      [One(finish), range_4(finish - 4), ..acc]
+      |> do_from_list_reverse
+    _ -> do_deep_range(start + 4, finish, [range_4(start), ..acc])
+  }
+}
+
+fn range_4(start: Int) {
+  Four(start, start + 1, start + 2, start + 3)
+}
+
+fn range_3(start: Int) {
+  Three(start, start + 1, start + 2)
+}
+
+fn range_2(start: Int) {
+  Two(start, start + 1)
+}
+
+/// Compares two trees for equality. Since trees can have many shapes, the items
+/// can be in the correct order and values, but the tree is balanced differently.
+/// 
+/// This function reduces over the two trees and compares their values, immediately
+/// returning `False` if they are not equal.
+/// 
+pub fn equals(a: ShineTree(u), b: ShineTree(u)) {
+  case a, b {
+    a, b if a == b -> True
+    a, b ->
+      case shift(a), shift(b) {
+        Ok(#(item_a, a)), Ok(#(item_b, b)) if item_a == item_b -> equals(a, b)
+        _, _ -> False
       }
   }
 }

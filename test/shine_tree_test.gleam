@@ -1,8 +1,8 @@
-import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/iterator
 import gleam/list
+import gleam/pair
 import gleeunit
 import gleeunit/should
 import pprint
@@ -30,7 +30,7 @@ pub fn single_test() {
   |> should.equal(#(1, shine_tree.empty))
 }
 
-pub fn reduce_l_test() {
+pub fn fold_l_test() {
   let numbers = iterator.range(0, 1000)
 
   let sum_iterator =
@@ -43,11 +43,11 @@ pub fn reduce_l_test() {
     |> shine_tree.from_iterator
 
   number_tree
-  |> shine_tree.reduce_l(0, int.add)
+  |> shine_tree.fold_l(0, int.add)
   |> should.equal(sum_iterator)
 
   number_tree
-  |> shine_tree.reduce_r(0, int.add)
+  |> shine_tree.fold_r(0, int.add)
   |> should.equal(sum_iterator)
 }
 
@@ -99,10 +99,83 @@ pub fn list_test() {
 }
 
 pub fn size_test() {
-  iterator.range(1, 3000)
+  let size_3000_iterator = iterator.range(1, 3000)
+
+  size_3000_iterator
   |> shine_tree.from_iterator
   |> shine_tree.size
   |> should.equal(3000)
+
+  size_3000_iterator
+  |> iterator.to_list
+  |> shine_tree.from_list
+  |> shine_tree.size
+  |> should.equal(3000)
+
+  push_for(shine_tree.empty, 3000, Nil)
+  |> shine_tree.size
+  |> should.equal(3000)
+
+  unshift_for(shine_tree.empty, 3000, Nil)
+  |> shine_tree.size
+  |> should.equal(3000)
+
+  pop_for(
+    size_3000_iterator
+      |> shine_tree.from_iterator,
+    3000,
+  )
+  |> should.equal(shine_tree.empty)
+
+  shift_for(
+    size_3000_iterator
+      |> shine_tree.from_iterator,
+    3000,
+  )
+  |> should.equal(shine_tree.empty)
+}
+
+fn pop_for(tree: shine_tree.ShineTree(u), count: Int) {
+  case count {
+    0 -> tree
+    _ ->
+      pop_for(
+        tree
+          |> shine_tree.pop
+          |> should.be_ok
+          |> pair.second,
+        count - 1,
+      )
+  }
+}
+
+fn shift_for(tree: shine_tree.ShineTree(u), count: Int) {
+  case count {
+    0 -> tree
+    _ -> {
+      shift_for(
+        tree
+          |> shine_tree.shift
+          |> should.be_ok
+          |> pair.second,
+        count - 1,
+      )
+    }
+  }
+}
+
+fn unshift_for(tree: shine_tree.ShineTree(u), count: Int, u) {
+  case count {
+    0 -> tree
+    _ -> unshift_for(tree |> shine_tree.unshift(u), count - 1, u)
+  }
+}
+
+fn push_for(tree: shine_tree.ShineTree(u), count: Int, u) {
+  case count {
+    0 -> tree
+    _ -> push_for(tree |> shine_tree.push(u), count - 1, u)
+  }
 }
 
 pub fn all_test() {
@@ -167,10 +240,10 @@ pub fn map_test() {
 
 pub fn reverse_test() {
   let reversed_list =
-    iterator.range(500, 1)
+    iterator.range(5000, 1)
     |> iterator.to_list
 
-  iterator.range(1, 500)
+  iterator.range(1, 5000)
   |> shine_tree.from_iterator
   |> shine_tree.reverse
   |> shine_tree.to_list
@@ -188,10 +261,24 @@ pub fn fold_until_test() {
   let numbers = iterator.range(0, 1000)
   let expected =
     numbers
-    |> iterator.fold_until(0, fold_until_tester)
+    |> iterator.to_list
+    |> list.fold_until(0, fold_until_tester)
 
   numbers
   |> shine_tree.from_iterator
   |> shine_tree.fold_until(0, fold_until_tester)
   |> should.equal(expected)
+}
+
+pub fn range_test() {
+  let numbers = list.range(0, 1000)
+  let negative_numbers = list.range(0, -1000)
+
+  shine_tree.range(0, 1000)
+  |> shine_tree.to_list
+  |> should.equal(numbers)
+
+  shine_tree.range(0, -1000)
+  |> shine_tree.to_list
+  |> should.equal(negative_numbers)
 }
