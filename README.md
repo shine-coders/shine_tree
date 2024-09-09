@@ -33,7 +33,6 @@ gleam add shine_tree
 import shine_tree.{empty, push, to_list}
 
 pub fn main() {
-  // TODO: An example of the project in use
   empty
   |> push(1)
   |> push(2)
