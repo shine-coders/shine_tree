@@ -1,5 +1,7 @@
+import gleam/io
 import gleam/iterator.{type Iterator, Done, Next}
 import gleam/list.{type ContinueOrStop, Continue, Stop}
+import gleam/order.{type Order, Eq, Gt, Lt}
 import gleam/result.{map}
 
 /// An ordered tree of values used to implement other kinds of data
@@ -906,5 +908,31 @@ pub fn equals(a: ShineTree(u), b: ShineTree(u)) {
         Ok(#(item_a, a)), Ok(#(item_b, b)) if item_a == item_b -> equals(a, b)
         _, _ -> False
       }
+  }
+}
+
+/// Sort a `ShineTree` using the `compare` function using a "quicksort" algorithm.
+pub fn quick_sort(
+  tree: ShineTree(u),
+  compare: fn(u, u) -> Order,
+) -> ShineTree(u) {
+  case tree {
+    Empty -> Empty
+    Single(u) -> Single(u)
+    _ -> {
+      let assert Ok(#(pivot, tree)) = shift(tree)
+      let #(left, right) = partition(tree, pivot, compare)
+      quick_sort(left, compare)
+      |> push(pivot)
+      |> append(quick_sort(right, compare))
+    }
+  }
+}
+
+fn partition(tree: ShineTree(u), pivot: u, compare: fn(u, u) -> Order) {
+  use #(left, right), item <- fold_l(tree, #(Empty, Empty))
+  case compare(item, pivot) {
+    Gt -> #(left, right |> push(item))
+    _ -> #(left |> push(item), right)
   }
 }

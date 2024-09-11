@@ -1,3 +1,4 @@
+import gleam/float
 import gleam/int
 import gleam/io
 import gleam/iterator
@@ -6,6 +7,7 @@ import gleam/pair
 import gleeunit
 import gleeunit/should
 import pprint
+import random_items
 import shine_tree.{type ShineTree}
 
 pub fn main() {
@@ -281,4 +283,17 @@ pub fn range_test() {
   shine_tree.range(0, -1000)
   |> shine_tree.to_list
   |> should.equal(negative_numbers)
+}
+
+pub fn sort_test() {
+  let sorted =
+    shine_tree.from_list(random_items.items_10_000)
+    |> shine_tree.quick_sort(int.compare)
+
+  use left, right <- shine_tree.fold_l(sorted, 0)
+
+  case left, right {
+    left, right if left <= right -> right
+    _, _ -> panic as "Sort failed!"
+  }
 }
