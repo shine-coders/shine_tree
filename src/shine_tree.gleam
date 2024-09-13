@@ -797,30 +797,65 @@ pub fn filter_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
 ///   }
 /// })
 /// // -> 10
-pub fn fold_until(
+pub fn fold_l_until(
   tree: ShineTree(u),
   v,
   with f: fn(v, u) -> ContinueOrStop(v),
 ) -> v {
-  do_fold_until(tree, v, f) |> unwrap_fold_until
+  do_fold_l_until(tree, v, f) |> unwrap_fold_until
 }
 
-fn do_fold_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
+/// This is an alias for `fold_l_until`
+pub const fold_until = fold_l_until
+
+/// Fold a given value over the items of a given tree, starting with the end until the
+/// given function returns `Stop`.
+/// 
+/// The accumulated value is then returned.
+pub fn fold_r_until(
+  tree: ShineTree(u),
+  v,
+  with f: fn(v, u) -> ContinueOrStop(v),
+) -> v {
+  do_fold_r_until(tree, v, f) |> unwrap_fold_until
+}
+
+/// This is an alias for `fold_r_until`
+pub const fold_right_until = fold_r_until
+
+fn do_fold_l_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case tree {
     Empty -> Continue(v)
     Single(u) -> f(v, u)
     Deep(_, pf, root, sf) -> {
-      use v <- try_continue(do_fold_node_until(pf, v, f))
+      use v <- try_continue(do_fold_node_l_until(pf, v, f))
       use v <- try_continue({
-        use v, node <- do_fold_until_rec(root, v)
-        do_fold_node_until(node, v, f)
+        use v, node <- do_fold_l_until_rec(root, v)
+        do_fold_node_l_until(node, v, f)
       })
-      do_fold_node_until(sf, v, f)
+      do_fold_node_l_until(sf, v, f)
     }
   }
 }
 
-const do_fold_until_rec = do_fold_until
+fn do_fold_r_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
+  case tree {
+    Empty -> Continue(v)
+    Single(u) -> f(v, u)
+    Deep(_, pf, root, sf) -> {
+      use v <- try_continue(do_fold_node_r_until(sf, v, f))
+      use v <- try_continue({
+        use v, node <- do_fold_r_until_rec(root, v)
+        do_fold_node_r_until(node, v, f)
+      })
+      do_fold_node_r_until(pf, v, f)
+    }
+  }
+}
+
+const do_fold_r_until_rec = do_fold_r_until
+
+const do_fold_l_until_rec = do_fold_l_until
 
 fn try_continue(v: ContinueOrStop(v), f: fn(v) -> ContinueOrStop(v)) {
   case v {
@@ -829,7 +864,7 @@ fn try_continue(v: ContinueOrStop(v), f: fn(v) -> ContinueOrStop(v)) {
   }
 }
 
-fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
+fn do_fold_node_l_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case node {
     One(a) -> f(v, a)
     Two(a, b) -> {
@@ -843,6 +878,28 @@ fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
       f(v, c)
     }
     Four(a, b, c, d) -> {
+      use v <- try_continue(f(v, a))
+      use v <- try_continue(f(v, b))
+      use v <- try_continue(f(v, c))
+      f(v, d)
+    }
+  }
+}
+
+fn do_fold_node_r_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
+  case node {
+    One(a) -> f(v, a)
+    Two(b, a) -> {
+      use v <- try_continue(f(v, a))
+      f(v, b)
+    }
+
+    Three(c, b, a) -> {
+      use v <- try_continue(f(v, a))
+      use v <- try_continue(f(v, b))
+      f(v, c)
+    }
+    Four(d, c, b, a) -> {
       use v <- try_continue(f(v, a))
       use v <- try_continue(f(v, b))
       use v <- try_continue(f(v, c))
@@ -1177,5 +1234,38 @@ fn node_size(node: Node(u)) -> Int {
     Two(_, _) -> 2
     Three(_, _, _) -> 3
     Four(_, _, _, _) -> 4
+  }
+}
+
+/// Perform a folding operation and return the success `Ok` value,
+/// or the error `Error` value if the operation fails.
+pub fn try_foldl(
+  tree: ShineTree(u),
+  acc,
+  f: fn(acc, u) -> Result(acc, err),
+) -> Result(acc, err) {
+  use acc, u <- fold_l_until(tree, Ok(acc))
+  let assert Ok(acc) = acc
+  case f(acc, u) {
+    Ok(u) -> Continue(Ok(u))
+    Error(err) -> Stop(Error(err))
+  }
+}
+
+/// This is an alias for `try_foldl`
+pub const try_fold = try_foldl
+
+/// Perform a folding operation and return the success `Ok` value,
+/// or the error `Error` value if the operation fails immediately.
+pub fn try_foldr(
+  tree: ShineTree(u),
+  acc,
+  f: fn(acc, u) -> Result(acc, err),
+) -> Result(acc, err) {
+  use acc, u <- fold_r_until(tree, Ok(acc))
+  let assert Ok(acc) = acc
+  case f(acc, u) {
+    Ok(acc) -> Continue(Ok(acc))
+    Error(err) -> Stop(Error(err))
   }
 }

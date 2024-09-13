@@ -267,7 +267,7 @@ pub fn fold_until_test() {
 
   numbers
   |> shine_tree.from_iterator
-  |> shine_tree.fold_until(0, fold_until_tester)
+  |> shine_tree.fold_l_until(0, fold_until_tester)
   |> should.equal(expected)
 }
 
