@@ -296,3 +296,13 @@ pub fn sort_test() {
     _, _ -> panic as "Sort failed!"
   }
 }
+
+pub fn get_test() {
+  let tree = shine_tree.range(0, 1000)
+
+  use idx, value <- shine_tree.fold(tree, 0)
+  case idx, value {
+    idx, value if idx == value -> value + 1
+    _, _ -> panic as "Get failed!"
+  }
+}

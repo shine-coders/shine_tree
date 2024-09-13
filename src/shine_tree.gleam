@@ -1111,3 +1111,71 @@ fn do_group_by(
   use final_dict, item <- fold_l(tree, dict)
   do_group_by_node(final_dict, item, f)
 }
+
+/// Get the value at the given index in the tree if it exists.
+pub fn get(tree: ShineTree(u), index: Int) -> Result(u, Nil) {
+  case tree, index {
+    Empty, _ -> Error(Nil)
+    Single(u), 0 -> Ok(u)
+    Single(_), _ -> Error(Nil)
+    Deep(count, _, _, _), index if index >= count || index < 0 -> Error(Nil)
+    Deep(_, One(u), _, _), 0 -> Ok(u)
+    Deep(_, Two(u, _), _, _), 0 -> Ok(u)
+    Deep(_, Three(u, _, _), _, _), 0 -> Ok(u)
+    Deep(_, Four(u, _, _, _), _, _), 0 -> Ok(u)
+    Deep(_, Two(_, v), _, _), 1 -> Ok(v)
+    Deep(_, Three(_, v, _), _, _), 1 -> Ok(v)
+    Deep(_, Four(_, v, _, _), _, _), 1 -> Ok(v)
+    Deep(_, Three(_, _, w), _, _), 2 -> Ok(w)
+    Deep(_, Four(_, _, w, _), _, _), 2 -> Ok(w)
+    Deep(_, Four(_, _, _, x), _, _), 3 -> Ok(x)
+    Deep(count, _, _, One(u)), index if index == count - 1 -> Ok(u)
+    Deep(count, _, _, Two(_, u)), index if index == count - 1 -> Ok(u)
+    Deep(count, _, _, Three(_, _, u)), index if index == count - 1 -> Ok(u)
+    Deep(count, _, _, Four(_, _, _, u)), index if index == count - 1 -> Ok(u)
+    Deep(count, _, _, Two(v, _)), index if index == count - 2 -> Ok(v)
+    Deep(count, _, _, Three(_, v, _)), index if index == count - 2 -> Ok(v)
+    Deep(count, _, _, Four(_, _, v, _)), index if index == count - 2 -> Ok(v)
+    Deep(count, _, _, Three(w, _, _)), index if index == count - 3 -> Ok(w)
+    Deep(count, _, _, Four(_, w, _, _)), index if index == count - 3 -> Ok(w)
+    Deep(count, _, _, Four(x, _, _, _)), index if index == count - 4 -> Ok(x)
+    Deep(_, pf, root, _), index -> {
+      let index = index - node_size(pf)
+      do_get_root(root, index)
+    }
+  }
+}
+
+fn do_get_root(node: ShineTree(Node(u)), index: Int) {
+  {
+    use index, node <- fold_until(node, Error(index))
+    let assert Error(index) = index
+    get_node(index, node)
+  }
+  |> result.nil_error
+}
+
+fn get_node(index: Int, node: Node(u)) {
+  case node, index {
+    One(u), 0 -> Stop(Ok(u))
+    Two(u, _), 0 -> Stop(Ok(u))
+    Two(_, v), 1 -> Stop(Ok(v))
+    Three(u, _, _), 0 -> Stop(Ok(u))
+    Three(_, v, _), 1 -> Stop(Ok(v))
+    Three(_, _, w), 2 -> Stop(Ok(w))
+    Four(u, _, _, _), 0 -> Stop(Ok(u))
+    Four(_, v, _, _), 1 -> Stop(Ok(v))
+    Four(_, _, w, _), 2 -> Stop(Ok(w))
+    Four(_, _, _, x), 3 -> Stop(Ok(x))
+    node, _ -> Continue(Error(index - node_size(node)))
+  }
+}
+
+fn node_size(node: Node(u)) -> Int {
+  case node {
+    One(_) -> 1
+    Two(_, _) -> 2
+    Three(_, _, _) -> 3
+    Four(_, _, _, _) -> 4
+  }
+}
