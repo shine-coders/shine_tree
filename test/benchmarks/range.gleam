@@ -29,7 +29,7 @@ fn range_operations() {
     ],
     f: shine_tree.range(1, _),
   )
-  |> common.format_bench("Creating List/Tree of size n from a range 1 to n")
+  |> common.format_bench
   |> io.println
 }
 

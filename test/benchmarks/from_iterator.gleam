@@ -29,7 +29,7 @@ fn from_iterator_operations() {
     ],
     f: shine_tree.from_iterator,
   )
-  |> common.format_bench("Converting to ShineTree")
+  |> common.format_bench
   |> io.println
 }
 

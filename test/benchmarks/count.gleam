@@ -30,7 +30,7 @@ fn counting_operations() {
     ],
     f: shine_tree.count(_, int.is_even),
   )
-  |> common.format_bench("Element counting")
+  |> common.format_bench
   |> io.println
 }
 

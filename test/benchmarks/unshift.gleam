@@ -41,7 +41,7 @@ fn unshifting_operations() {
     ],
     f: common.push_shine_tree_nil(shine_tree.empty, _),
   )
-  |> common.format_bench("Prepending Items")
+  |> common.format_bench
   |> io.println
 }
 

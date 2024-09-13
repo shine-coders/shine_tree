@@ -9,7 +9,6 @@ packages = [
   { name = "gleam_stdlib", version = "0.40.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "86606B75A600BBD05E539EB59FABC6E307EEEA7B1E5865AFB6D980A93BCB2181" },
   { name = "gleeunit", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "F7A7228925D3EE7D0813C922E062BFD6D7E9310F0BEE585D3A42F3307E3CFD13" },
   { name = "humanise", version = "1.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "humanise", source = "hex", outer_checksum = "44E0977BCA0C81DDDD46A8E4215BDD274FDBB18F5363B56BE617564135CA2F14" },
-  { name = "kirala_markdown", version = "1.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "kirala_markdown", source = "hex", outer_checksum = "A3E1578F5C33540087902BE54831F653AED2ABD2ACDDE498ADCA7AA3A7EEE7CC" },
   { name = "pprint", version = "1.0.3", build_tools = ["gleam"], requirements = ["glam", "gleam_stdlib"], otp_app = "pprint", source = "hex", outer_checksum = "76BBB92E23D12D954BD452686543F29EDE8EBEBB7FC0ACCBCA66EEF276EC3A06" },
   { name = "simplifile", version = "2.1.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "BDD04F5D31D6D34E2EDFAEF0B68A6297AEC939888C3BFCE61133DE13857F6DA2" },
 ]
@@ -20,6 +19,5 @@ gleam_otp = { version = ">= 0.12.0 and < 1.0.0" }
 gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 humanise = { version = ">= 1.0.2 and < 2.0.0" }
-kirala_markdown = { version = ">= 1.0.2 and < 2.0.0" }
 pprint = { version = ">= 1.0.3 and < 2.0.0" }
 simplifile = { version = ">= 2.1.0 and < 3.0.0" }

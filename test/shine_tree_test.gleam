@@ -1,4 +1,3 @@
-import gleam/float
 import gleam/int
 import gleam/io
 import gleam/iterator
@@ -288,7 +287,7 @@ pub fn range_test() {
 pub fn sort_test() {
   let sorted =
     shine_tree.from_list(random_items.items_10_000)
-    |> shine_tree.quick_sort(int.compare)
+    |> shine_tree.sort(int.compare)
 
   use left, right <- shine_tree.fold_l(sorted, 0)
 

@@ -1,7 +1,8 @@
-import gleam/io
+import gleam/dict.{type Dict}
 import gleam/iterator.{type Iterator, Done, Next}
 import gleam/list.{type ContinueOrStop, Continue, Stop}
-import gleam/order.{type Order, Eq, Gt, Lt}
+import gleam/option.{None, Some}
+import gleam/order.{type Order, Gt}
 import gleam/result.{map}
 
 /// An ordered tree of values used to implement other kinds of data
@@ -73,6 +74,9 @@ fn fold_l_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
   fold_l_node(acc, node, f)
 }
 
+/// This is an alias for `fold_l`.
+pub const fold = fold_l
+
 /// Reduces all the elements of the given tree into a single value,
 /// made by calling a given function on all the elements, traversing
 /// the tree from left to right.
@@ -124,6 +128,9 @@ fn fold_r_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
   use acc, node <- fold_r(root, acc)
   fold_r_node(acc, node, f)
 }
+
+/// This is an alias for `fold_r`.
+pub const fold_right = fold_r
 
 /// Maps all the elements of the given tree into a new tree where
 /// each element has been transformed by the given function.
@@ -347,7 +354,7 @@ pub fn filter(tree: ShineTree(u), f: fn(u) -> Bool) {
       False -> acc
     }
   }
-  |> from_list
+  |> do_from_list
 }
 
 /// Creates a new list containing all the elements of the given tree.
@@ -400,6 +407,49 @@ fn do_from_list(values: List(u)) -> ShineTree(u) {
       Deep(count, Four(a, b, c, d), do_from_list_reverse(rest), tail)
     }
   }
+}
+
+/// Finds the first element in a given tree that satisfies the given predicate.
+/// 
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
+/// |> find(int.is_even)
+/// // -> 2
+/// ```
+/// 
+pub fn find(tree: ShineTree(u), f: fn(u) -> Bool) {
+  {
+    use _, item <- fold_until(tree, None)
+    case f(item) {
+      True -> Stop(Some(item))
+      False -> Continue(None)
+    }
+  }
+  |> option.to_result(Nil)
+}
+
+/// Finds the first element in a given tree for which the given function returns `Ok(val)`.
+/// 
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
+/// |> find_map(fn(u) {
+///   case u > 5 {
+///     True -> Ok(u)
+///     False -> Error(Nil)
+///   }
+/// })
+/// // -> 2
+/// ```
+/// 
+pub fn find_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
+  {
+    use _, item <- fold_until(tree, None)
+    case f(item) {
+      Ok(val) -> Stop(Some(val))
+      _ -> Continue(None)
+    }
+  }
+  |> option.to_result(Nil)
 }
 
 fn do_chunk_values(
@@ -582,6 +632,10 @@ pub fn single(u) {
   Single(u)
 }
 
+/// Returns the number of elements in the given tree.
+/// 
+/// This is an O(1) operation, because the size is cached in the tree
+/// at the time it is created.
 pub fn size(tree: ShineTree(u)) {
   case tree {
     Empty -> 0
@@ -677,6 +731,7 @@ fn any_rec(tree: ShineTree(u), f: fn(u) -> Bool) {
   any(tree, f)
 }
 
+/// Returns `True` if the given value is contained in the given tree.
 pub fn contains(tree: ShineTree(u), u) {
   use v <- any(tree)
   v == u
@@ -705,6 +760,26 @@ fn unwrap_fold_until(v: ContinueOrStop(v)) {
   case v {
     Stop(v) | Continue(v) -> v
   }
+}
+
+/// Calls a function for each element in the tree, discarding the return value.
+pub fn each(tree: ShineTree(u), f: fn(u) -> v) -> Nil {
+  use _, item <- fold_l(tree, Nil)
+  f(item)
+  Nil
+}
+
+/// Returns a new tree containing only the elements from the first tree
+/// where the given function returns `Ok(b)`.
+pub fn filter_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
+  {
+    use acc, item <- fold_l(tree, [])
+    case f(item) {
+      Ok(b) -> [b, ..acc]
+      _ -> acc
+    }
+  }
+  |> do_from_list_reverse
 }
 
 /// Fold a given value over the items of a given tree, starting with the beginning until the
@@ -912,27 +987,127 @@ pub fn equals(a: ShineTree(u), b: ShineTree(u)) {
 }
 
 /// Sort a `ShineTree` using the `compare` function using a "quicksort" algorithm.
-pub fn quick_sort(
-  tree: ShineTree(u),
-  compare: fn(u, u) -> Order,
-) -> ShineTree(u) {
+pub fn sort(tree: ShineTree(u), compare: fn(u, u) -> Order) -> ShineTree(u) {
   case tree {
     Empty -> Empty
     Single(u) -> Single(u)
     _ -> {
       let assert Ok(#(pivot, tree)) = shift(tree)
       let #(left, right) = partition(tree, pivot, compare)
-      quick_sort(left, compare)
-      |> push(pivot)
-      |> append(quick_sort(right, compare))
+      let left = list.sort(left, compare)
+      let right = [pivot, ..list.sort(right, compare)]
+
+      list.append(left, right) |> from_list
     }
   }
 }
 
 fn partition(tree: ShineTree(u), pivot: u, compare: fn(u, u) -> Order) {
-  use #(left, right), item <- fold_l(tree, #(Empty, Empty))
+  use #(left, right), item <- fold_l(tree, #([], []))
   case compare(item, pivot) {
-    Gt -> #(left, right |> push(item))
-    _ -> #(left |> push(item), right)
+    Gt -> #(left, [item, ..right])
+    _ -> #([item, ..left], right)
   }
+}
+
+// Get the first item in the tree, if it exists.
+pub fn first(tree: ShineTree(u)) -> Result(u, Nil) {
+  case tree {
+    Deep(_, One(u), _, _) -> Ok(u)
+    Deep(_, Two(u, _), _, _) -> Ok(u)
+    Deep(_, Three(u, _, _), _, _) -> Ok(u)
+    Deep(_, Four(u, _, _, _), _, _) -> Ok(u)
+    Single(u) -> Ok(u)
+    _ -> Error(Nil)
+  }
+}
+
+/// This is an alias for `first`.
+pub const head = first
+
+// Get the last item in the tree, if it exists.
+pub fn last(tree: ShineTree(u)) -> Result(u, Nil) {
+  case tree {
+    Deep(_, _, _, One(u)) -> Ok(u)
+    Deep(_, _, _, Two(_, u)) -> Ok(u)
+    Deep(_, _, _, Three(_, _, u)) -> Ok(u)
+    Deep(_, _, _, Four(_, _, _, u)) -> Ok(u)
+    Single(u) -> Ok(u)
+    _ -> Error(Nil)
+  }
+}
+
+/// This is an alias for `last`.
+pub const tail = last
+
+/// This function takes the tree, and groups the values by a returned key into a `Dict`.
+/// It does not sort the values, or preserve the order.
+pub fn group(tree: ShineTree(u), f: fn(u) -> key) -> Dict(key, ShineTree(u)) {
+  case tree {
+    Empty -> dict.new()
+    Single(u) -> dict.insert(dict.new(), f(u), Single(u))
+    Deep(_, pf, root, sf) -> {
+      dict.new()
+      |> do_group_by_node(pf, f)
+      |> do_group_by(root, f)
+      |> do_group_by_node(sf, f)
+      |> dict.map_values(fn(_, value) { from_list(value) })
+    }
+  }
+}
+
+fn do_group_by_node(
+  final_dict: Dict(key, List(u)),
+  item: Node(u),
+  f: fn(u) -> key,
+) {
+  case item {
+    One(u) -> {
+      let u_key = f(u)
+      let u_list = [u, ..dict.get(final_dict, u_key) |> result.unwrap([])]
+      dict.insert(final_dict, u_key, u_list)
+    }
+    Two(u, v) -> {
+      let u_key = f(u)
+      let v_key = f(v)
+      let u_list = [u, ..dict.get(final_dict, u_key) |> result.unwrap([])]
+      dict.insert(final_dict, u_key, u_list)
+      let v_list = [v, ..dict.get(final_dict, v_key) |> result.unwrap([])]
+      dict.insert(final_dict, v_key, v_list)
+    }
+    Three(u, v, w) -> {
+      let u_key = f(u)
+      let v_key = f(v)
+      let w_key = f(w)
+      let u_list = [u, ..dict.get(final_dict, u_key) |> result.unwrap([])]
+      dict.insert(final_dict, u_key, u_list)
+      let v_list = [v, ..dict.get(final_dict, v_key) |> result.unwrap([])]
+      dict.insert(final_dict, v_key, v_list)
+      let w_list = [w, ..dict.get(final_dict, w_key) |> result.unwrap([])]
+      dict.insert(final_dict, w_key, w_list)
+    }
+    Four(u, v, w, x) -> {
+      let u_key = f(u)
+      let v_key = f(v)
+      let w_key = f(w)
+      let x_key = f(x)
+      let u_list = [u, ..dict.get(final_dict, u_key) |> result.unwrap([])]
+      dict.insert(final_dict, u_key, u_list)
+      let v_list = [v, ..dict.get(final_dict, v_key) |> result.unwrap([])]
+      dict.insert(final_dict, v_key, v_list)
+      let w_list = [w, ..dict.get(final_dict, w_key) |> result.unwrap([])]
+      dict.insert(final_dict, w_key, w_list)
+      let x_list = [x, ..dict.get(final_dict, x_key) |> result.unwrap([])]
+      dict.insert(final_dict, x_key, x_list)
+    }
+  }
+}
+
+fn do_group_by(
+  dict: Dict(key, List(u)),
+  tree: ShineTree(Node(u)),
+  f: fn(u) -> key,
+) {
+  use final_dict, item <- fold_l(tree, dict)
+  do_group_by_node(final_dict, item, f)
 }

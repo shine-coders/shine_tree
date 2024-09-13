@@ -43,7 +43,7 @@ fn folding_operations() {
     ],
     f: shine_tree.fold_l(_, 0, int.add),
   )
-  |> format_bench("Folding")
+  |> format_bench
   |> io.println
 }
 

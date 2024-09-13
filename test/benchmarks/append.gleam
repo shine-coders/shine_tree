@@ -29,7 +29,7 @@ fn list_append_operations() {
     ],
     f: fn(val) { shine_tree.append(val, val) },
   )
-  |> format_bench("Appending Trees/lists")
+  |> format_bench
   |> io.println
 }
 

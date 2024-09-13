@@ -41,7 +41,7 @@ fn shifting_operations() {
     ],
     f: common.shine_tree_pop_until_empty,
   )
-  |> common.format_bench("Shifting Trees/lists")
+  |> common.format_bench
   |> io.println
 }
 

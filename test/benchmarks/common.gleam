@@ -135,12 +135,10 @@ fn force_unwrap(n: Result(Float, b)) {
   n
 }
 
-pub fn format_bench(results: ShineTree(BenchResults), header: String) {
+pub fn format_bench(results: ShineTree(BenchResults)) {
   let builder =
     string_builder.new()
-    |> string_builder.append("## ")
-    |> string_builder.append(header)
-    |> string_builder.append("\n\n")
+    |> string_builder.append("\n")
     |> string_builder.append(
       "| Name | Mean | Median | Std. | Min | Max | Iterations |\n",
     )

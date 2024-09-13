@@ -29,7 +29,7 @@ fn size_operations() {
     ],
     f: shine_tree.size,
   )
-  |> common.format_bench("Checking Size")
+  |> common.format_bench
   |> io.println
 }
 
