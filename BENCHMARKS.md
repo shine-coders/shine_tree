@@ -1,72 +1,167 @@
-[0m[38;5;13m   Compiled[0m in 0.12s
-[0m[38;5;13m    Running[0m benchmark.main
-# ShineTree Benchmarks
-
-## Folding
-
-| Name | Mean | Median | Std. | Min | Max | Iterations |
-|---|---|---|---|---|---|---|
-|list.fold -> n = 100|1.01us|1.0us|17.27|0.0us|35.78ms|4355099|
-|list.fold -> n = 1_000|9.75us|9.0us|4.86|8.0us|2.33ms|505234|
-|list.fold -> n = 10_000|96.0us|92.0us|15.89|91.0us|291.0us|51993|
-|list.fold -> n = 100_000|968.83us|914.0us|152.29|912.0us|2.06ms|5159|
-|iterator.fold -> n = 100|5.47us|3.0us|87.87|2.0us|7.48ms|897357|
-|iterator.fold -> n = 1_000|44.8us|28.0us|100.05|25.0us|2.13ms|111272|
-|iterator.fold -> n = 10_000|291.34us|263.0us|77.5|259.0us|1.38ms|17152|
-|iterator.fold -> n = 100_000|2.96ms|2.66ms|522.78|2.62ms|6.85ms|1692|
-|shine_tree.fold_l -> n = 100|0.71us|0.0us|35.43|0.0us|47.33ms|6105578|
-|shine_tree.fold_l -> n = 1_000|7.02us|6.0us|17.47|5.0us|6.65ms|701643|
-|shine_tree.fold_l -> n = 10_000|68.78us|62.0us|27.76|61.0us|2.29ms|72555|
-|shine_tree.fold_l -> n = 100_000|691.89us|623.0us|222.58|620.0us|2.4ms|7225|
-
-
-
-## Prepending Items
-
-| Name | Mean | Median | Std. | Min | Max | Iterations |
-|---|---|---|---|---|---|---|
-|shine_tree.unshift(Nil) -> n = 100|4.71us|2.0us|96.09|1.0us|13.21ms|1033919|
-|shine_tree.unshift(Nil) -> n = 1_000|46.04us|23.0us|116.08|19.0us|2.3ms|108269|
-|shine_tree.unshift(Nil) -> n = 10_000|414.97us|312.0us|152.08|275.0us|1.93ms|12041|
-|shine_tree.unshift(Nil) -> n = 100_000|5.09ms|4.67ms|716.14|3.87ms|8.84ms|983|
-|[item, ..rest] -> n = 100|0.75us|0.0us|88.84|0.0us|41.23ms|5684550|
-|[item, ..rest] -> n = 1_000|6.65us|2.0us|102.81|2.0us|8.48ms|737895|
-|[item, ..rest] -> n = 10_000|64.96us|86.0us|136.97|22.0us|2.47ms|76763|
-|[item, ..rest] -> n = 100_000|597.45us|823.0us|93.43|519.0us|1.78ms|8364|
-|shine_tree.push(Nil) (lists can't do this at all) -> n = 100|4.53us|2.0us|96.51|1.0us|8.71ms|1077184|
-|shine_tree.push(Nil) (lists can't do this at all) -> n = 1_000|44.26us|28.0us|115.0|16.0us|2.14ms|112560|
-|shine_tree.push(Nil) (lists can't do this at all) -> n = 10_000|389.49us|363.0us|169.83|237.0us|5.54ms|12832|
-|shine_tree.push(Nil) (lists can't do this at all) -> n = 100_000|4.81ms|4.54ms|771.46|3.51ms|8.93ms|1039|
-
-
-
-## Converting to ShineTree
-
-| Name | Mean | Median | Std. | Min | Max | Iterations |
-|---|---|---|---|---|---|---|
-|iterator.to_list -> n = 100|5.8us|3.0us|91.4|3.0us|7.98ms|839367|
-|iterator.to_list -> n = 1_000|39.28us|34.0us|45.7|32.0us|2.64ms|126909|
-|iterator.to_list -> n = 10_000|652.25us|634.0us|143.53|459.0us|1.93ms|7663|
-|iterator.to_list -> n = 100_000|7.38ms|8.76ms|833.4|6.2ms|11.13ms|677|
-|shine_tree.from_iterator -> n = 100|10.69us|9.0us|98.94|4.0us|4.65ms|463284|
-|shine_tree.from_iterator -> n = 1_000|86.68us|51.0us|115.13|47.0us|1.56ms|57591|
-|shine_tree.from_iterator -> n = 10_000|721.14us|1.01ms|165.86|569.0us|1.72ms|6932|
-|shine_tree.from_iterator -> n = 100_000|8.13ms|9.25ms|777.78|7.25ms|12.24ms|615|
-
-
-
+# ShineTree Benchmarks\n\n
+[0m[38;5;13m  Compiling[0m shine_tree
+[0m[38;5;13m   Compiled[0m in 0.95s
+[0m[38;5;13m    Running[0m benchmarks/append.main
 ## Appending Trees/lists
 
 | Name | Mean | Median | Std. | Min | Max | Iterations |
 |---|---|---|---|---|---|---|
-|list.append -> n = 100|0.39us|0.0us|26.46|0.0us|46.13ms|9722301|
-|list.append -> n = 1_000|4.74us|2.0us|22.87|2.0us|1.94ms|1028344|
-|list.append -> n = 10_000|28.34us|30.0us|18.86|22.0us|680.0us|175403|
-|list.append -> n = 100_000|490.17us|239.0us|363.46|201.0us|2.06ms|10194|
-|shine_tree.append -> n = 100|0.36us|0.0us|76.72|0.0us|72.42ms|10200465|
-|shine_tree.append -> n = 1_000|0.69us|0.0us|85.05|0.0us|48.25ms|6242082|
-|shine_tree.append -> n = 10_000|0.92us|1.0us|88.73|0.0us|37.34ms|4845986|
-|shine_tree.append -> n = 100_000|1.15us|1.0us|88.24|0.0us|28.17ms|3929173|
+|list.append -> n = 100|0.75us|0.0us|81.85|0.0us|65.17ms|4647440|
+|list.append -> n = 1_000|8.99us|5.0us|50.04|4.0us|12.84ms|545541|
+|list.append -> n = 10_000|51.6us|51.0us|43.73|40.0us|7.37ms|96474|
+|list.append -> n = 100_000|1.03ms|595.0us|762.71|533.0us|5.36ms|4850|
+|shine_tree.append -> n = 100|0.79us|0.0us|119.86|0.0us|87.17ms|4747039|
+|shine_tree.append -> n = 1_000|1.47us|0.0us|123.02|0.0us|49.61ms|2935294|
+|shine_tree.append -> n = 10_000|1.96us|1.0us|126.71|0.0us|37.73ms|2239641|
+|shine_tree.append -> n = 100_000|2.58us|2.0us|124.57|0.0us|29.57ms|1758910|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.18s
+[0m[38;5;13m    Running[0m benchmarks/count.main
+## Element counting
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|List count evens -> n = 100|2.45us|3.0us|31.52|2.0us|26.74ms|1872090|
+|List count evens -> n = 1_000|22.93us|22.0us|18.72|20.0us|4.83ms|216372|
+|List count evens -> n = 10_000|217.88us|203.0us|14.38|202.0us|622.0us|22917|
+|List count evens -> n = 100_000|2.13ms|2.04ms|109.29|2.03ms|2.75ms|2343|
+|ShineTree count evens -> n = 100|2.46us|2.0us|51.75|2.0us|38.51ms|1898809|
+|ShineTree count evens -> n = 1_000|22.84us|23.0us|26.29|22.0us|6.2ms|217398|
+|ShineTree count evens -> n = 10_000|229.29us|225.0us|58.28|223.0us|7.28ms|21789|
+|ShineTree count evens -> n = 100_000|2.07ms|2.06ms|58.39|2.03ms|2.69ms|2418|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.18s
+[0m[38;5;13m    Running[0m benchmarks/from_iterator.main
+## Converting to ShineTree
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|iterator.to_list -> n = 100|12.38us|7.0us|152.48|3.0us|8.32ms|391127|
+|iterator.to_list -> n = 1_000|47.68us|42.0us|14.01|37.0us|1.9ms|104392|
+|iterator.to_list -> n = 10_000|860.37us|848.0us|117.57|587.0us|4.21ms|5808|
+|iterator.to_list -> n = 100_000|10.48ms|10.12ms|1115.01|9.31ms|15.49ms|477|
+|shine_tree.from_iterator -> n = 100|18.52us|10.0us|150.35|6.0us|6.41ms|266996|
+|shine_tree.from_iterator -> n = 1_000|122.12us|80.0us|175.0|69.0us|5.04ms|40857|
+|shine_tree.from_iterator -> n = 10_000|1.01ms|1.09ms|174.15|842.0us|4.33ms|4956|
+|shine_tree.from_iterator -> n = 100_000|13.17ms|12.12ms|1907.24|11.7ms|22.78ms|379|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.18s
+[0m[38;5;13m    Running[0m benchmarks/shift.main
+## Shifting Trees/lists
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|list (take one item at a time, until empty) -> n = 100|0.46us|1.0us|1.41|0.0us|2.93ms|6712335|
+|list (take one item at a time, until empty) -> n = 1_000|4.93us|6.0us|17.48|4.0us|12.04ms|965011|
+|list (take one item at a time, until empty) -> n = 10_000|42.58us|42.0us|18.78|40.0us|3.07ms|116739|
+|list (take one item at a time, until empty) -> n = 100_000|366.96us|352.0us|21.08|352.0us|1.45ms|13617|
+|shine_tree.shift (against best case scenario list) -> n = 100|16.8us|7.0us|192.49|5.0us|9.14ms|292151|
+|shine_tree.shift (against best case scenario list) -> n = 1_000|163.53us|71.0us|394.31|56.0us|6.32ms|30513|
+|shine_tree.shift (against best case scenario list) -> n = 10_000|1.66ms|10.94ms|834.79|542.0us|14.13ms|3004|
+|shine_tree.shift (against best case scenario list) -> n = 100_000|19.21ms|18.57ms|886.76|16.55ms|22.73ms|260|
+|shine_tree.pop (lists can't do this at all) -> n = 100|17.12us|7.0us|193.76|6.0us|8.48ms|287428|
+|shine_tree.pop (lists can't do this at all) -> n = 1_000|167.09us|79.0us|389.93|70.0us|6.38ms|29868|
+|shine_tree.pop (lists can't do this at all) -> n = 10_000|1.68ms|2.33ms|778.26|590.0us|6.99ms|2970|
+|shine_tree.pop (lists can't do this at all) -> n = 100_000|19.62ms|18.95ms|2145.93|14.72ms|47.98ms|255|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.13s
+[0m[38;5;13m    Running[0m benchmarks/sort.main
+## Sorting lists
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|List sort -> n = 100|25.19us|22.0us|103.65|15.0us|6.55ms|196890|
+|List sort -> n = 1_000|231.96us|228.0us|22.63|214.0us|855.0us|21533|
+|List sort -> n = 10_000|4.48ms|4.51ms|421.28|3.38ms|6.55ms|1115|
+|List sort -> n = 100_000|71.07ms|69.39ms|3782.71|62.73ms|79.27ms|70|
+|ShineTree sort -> n = 100|49.68us|53.0us|55.18|46.0us|12.11ms|100285|
+|ShineTree sort -> n = 1_000|2.0ms|1.33ms|795.48|1.13ms|5.58ms|2494|
+|ShineTree sort -> n = 10_000|33.96ms|32.85ms|1918.85|30.78ms|42.39ms|148|
+|ShineTree sort -> n = 100_000|1.13s|1.13s|5582.35|1.12s|1.14s|5|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.15s
+[0m[38;5;13m    Running[0m benchmarks/fold.main
+## Folding
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|list.fold -> n = 100|1.08us|1.0us|9.87|1.0us|18.41ms|3671866|
+|list.fold -> n = 1_000|10.11us|10.0us|26.02|9.0us|12.4ms|482472|
+|list.fold -> n = 10_000|95.5us|100.0us|12.14|89.0us|2.42ms|52250|
+|list.fold -> n = 100_000|902.09us|890.0us|14.93|890.0us|1.1ms|5541|
+|iterator.fold -> n = 100|9.82us|6.0us|132.3|3.0us|9.14ms|497141|
+|iterator.fold -> n = 1_000|66.05us|36.0us|171.69|36.0us|4.01ms|75443|
+|iterator.fold -> n = 10_000|356.65us|378.0us|41.58|333.0us|4.08ms|14008|
+|iterator.fold -> n = 100_000|3.54ms|3.37ms|178.36|3.36ms|4.37ms|1412|
+|shine_tree.fold_l -> n = 100|1.21us|1.0us|69.3|0.0us|71.28ms|3649377|
+|shine_tree.fold_l -> n = 1_000|10.02us|9.0us|31.66|9.0us|10.15ms|491289|
+|shine_tree.fold_l -> n = 10_000|97.3us|97.0us|30.66|86.0us|4.39ms|51299|
+|shine_tree.fold_l -> n = 100_000|935.78us|971.0us|85.68|871.0us|4.58ms|5342|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.17s
+[0m[38;5;13m    Running[0m benchmarks/range.main
+## Creating List/Tree of size n from a range 1 to n
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|List range of size n -> n = 100|3.64us|2.0us|114.43|1.0us|20.48ms|1263585|
+|List range of size n -> n = 1_000|22.64us|20.0us|96.46|13.0us|3.88ms|218639|
+|List range of size n -> n = 10_000|158.59us|155.0us|26.15|136.0us|1.22ms|31479|
+|List range of size n -> n = 100_000|2.94ms|3.01ms|792.4|1.99ms|33.43ms|1699|
+|ShineTree range of size n -> n = 100|2.14us|1.0us|118.07|0.0us|31.97ms|2058460|
+|ShineTree range of size n -> n = 1_000|19.21us|11.0us|153.99|5.0us|6.78ms|256372|
+|ShineTree range of size n -> n = 10_000|136.17us|158.0us|192.45|63.0us|4.01ms|36643|
+|ShineTree range of size n -> n = 100_000|5.71ms|6.96ms|1089.53|3.41ms|9.19ms|875|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.19s
+[0m[38;5;13m    Running[0m benchmarks/size.main
+## Checking Size
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|list.size -> n = 100|0.26us|1.0us|0.93|0.0us|1.03ms|9092548|
+|list.size -> n = 1_000|3.74us|3.0us|0.8|3.0us|153.0us|1240069|
+|list.size -> n = 10_000|31.95us|30.0us|2.5|28.0us|172.0us|155221|
+|list.size -> n = 100_000|179.06us|189.0us|10.62|165.0us|331.0us|27881|
+|shine_tree.size -> n = 100|0.06us|0.0us|0.34|0.0us|205.0us|15061079|
+|shine_tree.size -> n = 1_000|0.06us|0.0us|0.41|0.0us|217.0us|15337262|
+|shine_tree.size -> n = 10_000|0.06us|0.0us|0.37|0.0us|217.0us|16259060|
+|shine_tree.size -> n = 100_000|0.06us|0.0us|0.52|0.0us|603.0us|13968283|
+
+
+
+[0m[38;5;13m   Compiled[0m in 0.19s
+[0m[38;5;13m    Running[0m benchmarks/unshift.main
+## Prepending Items
+
+| Name | Mean | Median | Std. | Min | Max | Iterations |
+|---|---|---|---|---|---|---|
+|shine_tree.unshift(Nil) -> n = 100|9.76us|5.0us|141.95|2.0us|9.87ms|499206|
+|shine_tree.unshift(Nil) -> n = 1_000|83.45us|38.0us|199.77|30.0us|5.05ms|59716|
+|shine_tree.unshift(Nil) -> n = 10_000|637.34us|467.0us|200.45|430.0us|3.64ms|7841|
+|shine_tree.unshift(Nil) -> n = 100_000|10.03ms|9.54ms|2010.34|6.24ms|27.18ms|498|
+|[item, ..rest] -> n = 100|1.54us|1.0us|118.99|0.0us|42.6ms|2711741|
+|[item, ..rest] -> n = 1_000|13.32us|85.0us|157.36|3.0us|7.86ms|368375|
+|[item, ..rest] -> n = 10_000|109.93us|74.0us|206.98|36.0us|3.7ms|45366|
+|[item, ..rest] -> n = 100_000|1.49ms|1.33ms|128.41|1.05ms|4.09ms|3354|
+|shine_tree.push(Nil) (lists can't do this at all) -> n = 100|9.5us|4.0us|144.95|2.0us|15.44ms|513117|
+|shine_tree.push(Nil) (lists can't do this at all) -> n = 1_000|82.41us|37.0us|189.66|28.0us|3.64ms|60463|
+|shine_tree.push(Nil) (lists can't do this at all) -> n = 10_000|640.56us|452.0us|233.06|415.0us|4.57ms|7801|
+|shine_tree.push(Nil) (lists can't do this at all) -> n = 100_000|11.11ms|11.8ms|1648.17|6.81ms|16.65ms|450|
 
 
 

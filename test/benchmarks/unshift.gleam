@@ -44,3 +44,7 @@ fn unshifting_operations() {
   |> common.format_bench("Prepending Items")
   |> io.println
 }
+
+pub fn main() {
+  unshifting_operations()
+}

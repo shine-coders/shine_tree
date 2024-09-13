@@ -32,3 +32,7 @@ fn size_operations() {
   |> common.format_bench("Checking Size")
   |> io.println
 }
+
+pub fn main() {
+  size_operations()
+}

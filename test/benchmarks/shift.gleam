@@ -1,7 +1,7 @@
 import benchmarks/common
 import gleam/io
 import gleam/list
-import shine_tree.{type ShineTree}
+import shine_tree
 
 fn shifting_operations() {
   shine_tree.empty
