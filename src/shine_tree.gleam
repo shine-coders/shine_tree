@@ -3,7 +3,7 @@ import gleam/iterator.{type Iterator, Done, Next}
 import gleam/list.{type ContinueOrStop, Continue, Stop}
 import gleam/option.{None, Some}
 import gleam/order.{type Order, Gt}
-import gleam/result.{map}
+import gleam/result.{try}
 
 /// An ordered tree of values used to implement other kinds of data
 /// structures like queues. Elements can be added or removed from the
@@ -1269,3 +1269,84 @@ pub fn try_foldr(
     Error(err) -> Stop(Error(err))
   }
 }
+
+/// Maps all the elements of the given tree into a new tree where
+/// each element has been transformed by the given function if the
+/// function returns `Ok(val)`. If the function returns `Error(err)`,
+/// the error returns immediately.
+pub fn try_map(
+  tree: ShineTree(u),
+  f: fn(u) -> Result(v, err),
+) -> Result(ShineTree(v), err) {
+  case tree {
+    Empty -> Ok(Empty)
+    Single(u) -> {
+      use u <- result.map(f(u))
+      Single(u)
+    }
+    Deep(count, pf, root, sf) -> {
+      use pf <- try(try_map_node(pf, f))
+      use root <- try(try_map_root(root, f))
+      use sf <- result.map(try_map_node(sf, f))
+      Deep(count, pf, root, sf)
+    }
+  }
+}
+
+fn try_map_root(root: ShineTree(Node(u)), f: fn(u) -> Result(v, err)) {
+  use node <- try_map(root)
+  try_map_node(node, f)
+}
+
+fn try_map_node(node: Node(u), f: fn(u) -> Result(v, err)) {
+  case node {
+    One(w) -> {
+      use w <- result.map(f(w))
+      One(w)
+    }
+    Two(w, x) -> {
+      use w <- try(f(w))
+      use x <- result.map(f(x))
+      Two(w, x)
+    }
+    Three(w, x, y) -> {
+      use w <- try(f(w))
+      use x <- try(f(x))
+      use y <- result.map(f(y))
+      Three(w, x, y)
+    }
+    Four(w, x, y, z) -> {
+      use w <- try(f(w))
+      use x <- try(f(x))
+      use y <- try(f(y))
+      use z <- result.map(f(z))
+      Four(w, x, y, z)
+    }
+  }
+}
+//   pub fn map(tree: ShineTree(u), with f: fn(u) -> v) -> ShineTree(v) {
+//   case tree {
+//     Empty -> Empty
+//     Single(u) -> Single(f(u))
+//     Deep(count, pf, root, sf) -> {
+//       let pf = map_node(pf, f)
+//       let root = map_root(root, f)
+//       let sf = map_node(sf, f)
+//       Deep(count, pf, root, sf)
+//     }
+//   }
+// }
+
+// fn map_node(node: Node(u), f: fn(u) -> v) -> Node(v) {
+//   case node {
+//     One(w) -> One(f(w))
+//     Two(w, x) -> Two(f(w), f(x))
+//     Three(w, x, y) -> Three(f(w), f(x), f(y))
+//     Four(w, x, y, z) -> Four(f(w), f(x), f(y), f(z))
+//   }
+// }
+
+// fn map_root(root: ShineTree(Node(u)), f: fn(u) -> v) -> ShineTree(Node(v)) {
+//   use node <- map(root)
+//   map_node(node, f)
+// }

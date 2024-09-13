@@ -2,6 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/iterator
 import gleam/list
+import gleam/option.{None, Some}
 import gleam/pair
 import gleeunit
 import gleeunit/should
@@ -305,4 +306,27 @@ pub fn get_test() {
     idx, value if idx == value -> value + 1
     _, _ -> panic as "Get failed!"
   }
+}
+
+pub fn try_map_test() {
+  shine_tree.from_list([Some(1), Some(2), Some(3), Some(4), None])
+  |> shine_tree.try_map(fn(x) {
+    case x {
+      Some(x) -> Ok(x + 1)
+      None -> Error(Nil)
+    }
+  })
+  |> should.be_error
+  |> should.equal(Nil)
+
+  shine_tree.range(0, 1000)
+  |> shine_tree.try_map(fn(x) {
+    case x > 1002 {
+      True -> Error(Nil)
+      False -> Ok(x + 1)
+    }
+  })
+  |> should.be_ok
+  |> shine_tree.to_list
+  |> should.equal(list.range(1, 1001))
 }
