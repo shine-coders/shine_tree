@@ -6,7 +6,7 @@ import gleam/order.{type Order, Gt}
 import gleam/result.{map}
 
 /// An ordered tree of values used to implement other kinds of data
-/// structures like queues. Elements can be added or removed from the
+/// structures like queues. Elements can be added or removed from the`
 /// head or tail of the tree in nearly constant time.
 pub opaque type ShineTree(u) {
   Empty
@@ -48,6 +48,8 @@ pub fn fold_l(over tree: ShineTree(u), from v, with f: fn(v, u) -> v) -> v {
   }
 }
 
+/// This helper function folds over a single node, potentially folding
+/// over 4 elements at a time.
 fn fold_l_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   case node {
     One(w) -> f(v, w)
@@ -69,6 +71,8 @@ fn fold_l_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   }
 }
 
+/// This helper function reduces a ShineTree(Node(u)) by folding over
+/// nodes, potentially folding over 4 items at a time.
 fn fold_l_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
   use acc, node <- fold_l(root, acc)
   fold_l_node(acc, node, f)
@@ -103,6 +107,8 @@ pub fn fold_r(tree: ShineTree(u), v, f: fn(v, u) -> v) -> v {
   }
 }
 
+/// This helper function folds over a single node, potentially folding
+/// over 4 elements at a time.
 fn fold_r_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   case node {
     One(w) -> f(v, w)
@@ -124,6 +130,8 @@ fn fold_r_node(v, node: Node(u), f: fn(v, u) -> v) -> v {
   }
 }
 
+/// This helper function reduces a ShineTree(Node(u)) by folding over
+/// nodes, potentially folding over 4 items at a time.
 fn fold_r_root(acc: v, root: ShineTree(Node(u)), f: fn(v, u) -> v) -> v {
   use acc, node <- fold_r(root, acc)
   fold_r_node(acc, node, f)
@@ -134,7 +142,7 @@ pub const fold_right = fold_r
 
 /// Maps all the elements of the given tree into a new tree where
 /// each element has been transformed by the given function.
-/// 
+///
 /// ```gleam
 /// let tree = shine_tree.from_list([1, 2, 3])
 /// shine_tree.map(tree, int.multiply(2, _))
@@ -153,6 +161,8 @@ pub fn map(tree: ShineTree(u), with f: fn(u) -> v) -> ShineTree(v) {
   }
 }
 
+/// This helper function maps a single node, potentially mapping
+/// up to four items at a time.
 fn map_node(node: Node(u), f: fn(u) -> v) -> Node(v) {
   case node {
     One(w) -> One(f(w))
@@ -162,13 +172,15 @@ fn map_node(node: Node(u), f: fn(u) -> v) -> Node(v) {
   }
 }
 
+/// This helper function maps entire nodes instead of just mapping over
+/// single items, potentially mapping up to four items at a time.
 fn map_root(root: ShineTree(Node(u)), f: fn(u) -> v) -> ShineTree(Node(v)) {
   use node <- map(root)
   map_node(node, f)
 }
 
 /// Pushes an element to the end of the given tree.
-/// 
+///
 /// ```gleam
 /// let tree = shine_tree.from_list([1, 2, 3])
 /// shine_tree.push(tree, 4)
@@ -188,10 +200,13 @@ pub fn push(tree: ShineTree(u), value: u) -> ShineTree(u) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error.
 const push_rec = push
 
 /// Pushes an element to the beginning of the given tree.
-/// 
+///
 /// ```gleam
 /// let tree = shine_tree.from_list([1, 2, 3])
 /// shine_tree.unshift(tree, 0)
@@ -211,20 +226,23 @@ pub fn unshift(tree: ShineTree(u), value: u) -> ShineTree(u) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error.
 const unshift_rec = unshift
 
 /// Pops an element from the end of the given tree.
-/// 
+///
 /// If there are no items, it returns `Error(Nil)`, otherwise
 /// it returns the popped item, and the resulting tree with the
 /// element removed.
-/// 
+///
 /// ```gleam
 /// let tree = shine_tree.from_list([1, 2, 3])
 /// shine_tree.pop(tree)
 /// // -> Ok(3, shine_tree.from_list([1, 2]))
 /// ```
-/// 
+///
 /// ```gleam
 /// shine_tree.empty |> shine_tree.pop
 /// // -> Error(Nil)
@@ -251,8 +269,14 @@ pub fn pop(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error.
 const pop_rec = pop
 
+/// This helper function pops an item from a given node, returning
+/// both the item and the resulting node, or an error if it would result
+/// in an empty node.
 fn pop_node(node: Node(u)) {
   case node {
     Two(u, v) -> Ok(#(v, One(u)))
@@ -263,17 +287,17 @@ fn pop_node(node: Node(u)) {
 }
 
 /// Pops an element from the front of the given tree.
-/// 
+///
 /// If there are no items, it returns `Error(Nil)`, otherwise
 /// it returns the popped item, and the resulting tree with the
 /// element removed.
-/// 
+///
 /// ```gleam
 /// let tree = shine_tree.from_list([1, 2, 3])
 /// shine_tree.shift(tree)
 /// // -> Ok(1, shine_tree.from_list([2, 3]))
 /// ```
-/// 
+///
 /// ```gleam
 /// shine_tree.empty |> shine_tree.pop
 /// // -> Error(Nil)
@@ -300,8 +324,14 @@ pub fn shift(tree: ShineTree(u)) -> Result(#(u, ShineTree(u)), Nil) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error.
 const shift_rec = shift
 
+/// This helper function shifts an item from a given node, returning
+/// both the item and the resulting node, or an error if it would result
+/// in an empty node.
 fn shift_node(node: Node(u)) {
   case node {
     Two(u, v) -> Ok(#(u, One(v)))
@@ -318,7 +348,7 @@ fn shift_node(node: Node(u)) {
 ///
 /// ```gleam
 /// let iter = unfold(shine_tree.from_list([1, 2, 3]))
-/// 
+///
 /// let #(num, iter) = iterator.step(iter)
 /// // -> Next(1, Iterator(Int))
 /// let #(num, iter) = iterator.step(iter)
@@ -339,49 +369,56 @@ pub fn to_iterator(tree: ShineTree(u)) {
 
 /// Creates a new tree containing all the elements of the given tree,
 /// for which the given predicate returns `True`.
-/// 
+///
 /// ```gleam
 /// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
 /// |> filter(int.is_odd)
 /// // -> shine_tree.from_list([1, 3, 5, 7])
 /// ```
-/// 
+///
 pub fn filter(tree: ShineTree(u), f: fn(u) -> Bool) {
   {
-    use acc, u <- fold_r(tree, [])
+    use acc, u <- fold_l(tree, [])
     case f(u) {
       True -> [u, ..acc]
       False -> acc
     }
   }
-  |> do_from_list
+  |> do_from_list_reverse
 }
 
 /// Creates a new list containing all the elements of the given tree.
-/// 
+///
 /// ```gleam
 /// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
 /// |> to_list
 /// // -> [1, 2, 3, 4, 5, 6, 7]
 /// ```
-/// 
+///
 pub fn to_list(tree: ShineTree(u)) {
   use acc, u <- fold_r(tree, [])
   [u, ..acc]
 }
 
 /// Creates a new tree containing all the elements of the given list.
-/// 
+///
 /// ```gleam
 /// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
 /// // -> It's a ShineTree with all the items in it!
 /// // Were you expecting a list?
 /// ```
-/// 
+///
 pub fn from_list(values: List(u)) {
   do_from_list(values)
 }
 
+/// This helper function creates a tree from the given list,
+/// potentially O(1) where n < 12, and then O(log n) otherwise.
+/// Since the center of the tree is a tree of nodes, accumulating
+/// nodes from the given list makes creating the nested subtrees
+/// nearly four times faster with each recursion. The algorithm
+/// tightly packs groups of `Four` to optimize for both memory and
+/// cpu efficiency.
 fn do_from_list(values: List(u)) -> ShineTree(u) {
   case values {
     [] -> Empty
@@ -402,21 +439,28 @@ fn do_from_list(values: List(u)) -> ShineTree(u) {
       Deep(11, Four(a, b, c, d), Single(Three(e, f, g)), Four(h, i, j, k))
     [a, b, c, d, e, f, g, h, i, j, k, l] ->
       Deep(12, Four(a, b, c, d), Single(Four(e, f, g, h)), Four(i, j, k, l))
-    [a, b, c, d, ..rest] -> {
-      let #(tail, rest, count) = do_chunk_values(rest, [], 4)
+    [a, b, c, d, e, f, g, h, i, j, k, l, ..rest] -> {
+      // 1. The head of the tree is Four(a, b, c, d)
+      // 2. Nodes accumulated in a list will be in reverse order, and thus,
+      //    the list itself starts with Four(i, j, k, l), Four(e, f, g, h)
+      // 3. The tail of the list is appended to the end of the tree, and then
+      //    the algorithm recurses to a specialized version of the to_list
+      //    function that creates a tree from a reversed list of nodes.
+      let #(tail, rest, count) =
+        do_chunk_values(rest, [Four(i, j, k, l), Four(e, f, g, h)], 12)
       Deep(count, Four(a, b, c, d), do_from_list_reverse(rest), tail)
     }
   }
 }
 
 /// Finds the first element in a given tree that satisfies the given predicate.
-/// 
+///
 /// ```gleam
 /// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
 /// |> find(int.is_even)
 /// // -> 2
 /// ```
-/// 
+///
 pub fn find(tree: ShineTree(u), f: fn(u) -> Bool) {
   {
     use _, item <- fold_until(tree, None)
@@ -429,7 +473,7 @@ pub fn find(tree: ShineTree(u), f: fn(u) -> Bool) {
 }
 
 /// Finds the first element in a given tree for which the given function returns `Ok(val)`.
-/// 
+///
 /// ```gleam
 /// shine_tree.from_list([1, 2, 3, 4, 5, 6, 7])
 /// |> find_map(fn(u) {
@@ -440,7 +484,7 @@ pub fn find(tree: ShineTree(u), f: fn(u) -> Bool) {
 /// })
 /// // -> 2
 /// ```
-/// 
+///
 pub fn find_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
   {
     use _, item <- fold_until(tree, None)
@@ -452,6 +496,10 @@ pub fn find_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
   |> option.to_result(Nil)
 }
 
+/// This helper function accumulates nodes of Four elements from a list,
+/// creating a reversed list of nodes whose elements are in the correct
+/// order. The last item of this list becomes the tail of the tree, and
+/// is returned seperately.
 fn do_chunk_values(
   values: List(u),
   acc: List(Node(u)),
@@ -461,22 +509,26 @@ fn do_chunk_values(
     [] -> panic as "This is impossible!"
     // this will NEVER happen
     [a] -> #(One(a), acc, count + 1)
-    //1 
+    //1
     [a, b] -> #(Two(a, b), acc, count + 2)
     //2
     [a, b, c] -> #(Three(a, b, c), acc, count + 3)
-    //3 
+    //3
     [a, b, c, d] -> #(Four(a, b, c, d), acc, count + 4)
     //4
     [a, b, c, d, ..rest] ->
       do_chunk_values(rest, [Four(a, b, c, d), ..acc], count + 4)
-    // also 4, but recurse
-    //                      ^^^^^^^^^^^^^^ We just prepended the value?
-    // Yes. That means the first four items (as a node) (that we inserted) are at the END of the linked list
-    // Got it :)
   }
 }
 
+/// This helper function creates a tree from the given list,
+/// potentially O(1) where n < 12, and then O(log n) otherwise.
+/// Since the center of the tree is a tree of nodes, accumulating
+/// nodes from the given list makes creating the nested subtrees
+/// nearly four times faster with each recursion. The algorithm
+/// tightly packs groups of `Four` to optimize for both memory and
+/// cpu efficiency. This algorithm differs from do_from list
+/// because it assumes the list of items is in reverse order.
 fn do_from_list_reverse(value: List(u)) -> ShineTree(u) {
   case value {
     [] -> Empty
@@ -497,14 +549,26 @@ fn do_from_list_reverse(value: List(u)) -> ShineTree(u) {
       Deep(11, Four(k, j, i, h), Single(Three(g, f, e)), Four(d, c, b, a))
     [a, b, c, d, e, f, g, h, i, j, k, l] ->
       Deep(12, Four(l, k, j, i), Single(Four(h, g, f, e)), Four(d, c, b, a))
-    [a, b, c, d, ..rest] -> {
+    [a, b, c, d, e, f, g, h, i, j, k, l, ..rest] -> {
+      // 1. The tail of the tree is Four(d, c, b, a)
+      // 2. Nodes accumulated in a list will be in reverse order, and the
+      //    items themselves will have elements in reverse order too and thus,
+      //    the list itself starts with Four(l, k, j, i), Four(h, g, f, e)
+      // 3. The tail of the list is appended to the end of the tree, and then
+      //    the algorithm recurses back to the version of the to_list
+      //    function that creates a tree from an ordered list of nodes.
       let tail = Four(d, c, b, a)
-      let #(head, nodes, count) = do_chunk_values_reverse(rest, [], 4)
+      let #(head, nodes, count) =
+        do_chunk_values_reverse(rest, [Four(l, k, j, i), Four(h, g, f, e)], 12)
       Deep(count, head, do_from_list(nodes), tail)
     }
   }
 }
 
+/// This helper function accumulates nodes of Four elements from a list,
+/// creating an ordered list of nodes whose elements are in the reverse
+/// order. The last item of this list becomes the head of the tree, and
+/// is returned seperately.
 fn do_chunk_values_reverse(items: List(u), acc: List(Node(u)), count: Int) {
   case items {
     [] -> panic as "This is impossible!"
@@ -517,6 +581,7 @@ fn do_chunk_values_reverse(items: List(u), acc: List(Node(u)), count: Int) {
   }
 }
 
+/// Create a `ShineTree(u)` from a given `Iterator(u)`.
 pub fn from_iterator(iterable: Iterator(u)) -> ShineTree(u) {
   let node_iterator =
     iterator.sized_chunk(iterable, 4)
@@ -534,6 +599,7 @@ pub fn from_iterator(iterable: Iterator(u)) -> ShineTree(u) {
   }
 }
 
+/// This helper function turns a list of items(1-4) into a single `Node(u)`.
 fn to_node(val: List(u)) {
   case val {
     [a] -> One(a)
@@ -544,6 +610,8 @@ fn to_node(val: List(u)) {
   }
 }
 
+/// This helper function pushes a single node into a tree, making sure
+/// to keep the tree as balanced as possible.
 fn push_node(tree: ShineTree(u), node: Node(u)) -> ShineTree(u) {
   case tree, node {
     Empty, One(a) -> Single(a)
@@ -566,6 +634,7 @@ fn push_node(tree: ShineTree(u), node: Node(u)) -> ShineTree(u) {
   }
 }
 
+/// Consume an `Iterator(Node(u))` and push the nodes directly into the tree.
 fn do_from_iterator(acc: ShineTree(u), rest: Iterator(Node(u))) -> ShineTree(u) {
   case iterator.step(rest) {
     Done -> acc
@@ -573,10 +642,12 @@ fn do_from_iterator(acc: ShineTree(u), rest: Iterator(Node(u))) -> ShineTree(u) 
   }
 }
 
+/// Prepend a given tree with another tree.
 pub fn prepend(tree_1: ShineTree(u), tree_2: ShineTree(u)) {
   append(tree_2, tree_1)
 }
 
+/// Append a given tree to another tree.
 pub fn append(tree_1: ShineTree(u), tree_2: ShineTree(u)) -> ShineTree(u) {
   case tree_1, tree_2 {
     t1, Empty -> t1
@@ -593,10 +664,22 @@ pub fn append(tree_1: ShineTree(u), tree_2: ShineTree(u)) -> ShineTree(u) {
   }
 }
 
-fn append_rec(tree_1: ShineTree(Node(u)), tree_2: ShineTree(Node(u))) {
-  tree_1 |> append(tree_2)
-}
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error
+const append_rec = append
 
+/// Concatenate a `List(ShineTree(U))` into a single `ShineTree(u)`.
+///
+/// ```gleam
+/// shine_tree.concat([
+///   shine_tree.single(1),
+///   shine_tree.single(2),
+///   shine_tree.single(3),
+/// ])
+/// |> shine_tree.to_list
+/// // [1, 2, 3]
+/// ```
 pub fn concat(trees: List(ShineTree(u))) {
   case trees {
     [] -> Empty
@@ -605,18 +688,27 @@ pub fn concat(trees: List(ShineTree(u))) {
   }
 }
 
+/// Reverse the order of all the elements inside a tree.
+///
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3, 4])
+/// |> shine_tree.reverse
+/// |> shine_tree.to_list
+/// // [4, 3, 2, 1]
+/// ```
 pub fn reverse(tree: ShineTree(u)) -> ShineTree(u) {
   case tree {
     Deep(count, pf, root, sf) ->
-      Deep(count, sf |> reverse_node, root |> reverse_rec, pf |> reverse_node)
+      Deep(count, reverse_node(sf), reverse_rec(root), reverse_node(pf))
     tree -> tree
   }
 }
 
 fn reverse_rec(tree: ShineTree(Node(u))) {
-  tree |> map(reverse_node) |> reverse
+  reverse(map(tree, reverse_node))
 }
 
+/// Reverse the order of the items in a node.
 fn reverse_node(node: Node(u)) {
   case node {
     Two(a, b) -> Two(b, a)
@@ -626,16 +718,15 @@ fn reverse_node(node: Node(u)) {
   }
 }
 
+/// An empty tree, a constant value, devoid of contents.
 pub const empty = Empty
 
+/// Create a `ShineTree(u)` with a single item.
 pub fn single(u) {
   Single(u)
 }
 
-/// Returns the number of elements in the given tree.
-/// 
-/// This is an O(1) operation, because the size is cached in the tree
-/// at the time it is created.
+/// Get the size of a `ShineTree(u)` in O(1) constant time.
 pub fn size(tree: ShineTree(u)) {
   case tree {
     Empty -> 0
@@ -646,7 +737,7 @@ pub fn size(tree: ShineTree(u)) {
 
 /// Returns `true` if the predicate `f` returns `True` for each
 /// element in the ShineTree. Returns `False` otherwise.
-/// 
+///
 /// ## Examples
 ///
 /// ```gleam
@@ -675,6 +766,9 @@ pub fn all(tree: ShineTree(u), f: fn(u) -> Bool) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error.
 const all_rec = all
 
 fn all_node(node: Node(u), f: fn(u) -> Bool) {
@@ -688,7 +782,7 @@ fn all_node(node: Node(u), f: fn(u) -> Bool) {
 
 /// Returns `True` if the predicate `f` returns `True` for any
 /// element in the ShineTree. Returns `False` otherwise.
-/// 
+///
 /// ## Examples
 ///
 /// ```gleam
@@ -701,7 +795,7 @@ fn all_node(node: Node(u), f: fn(u) -> Bool) {
 /// any([10, 32, 42, 43, 44], fn(x) { x == 42 })
 /// // -> True
 /// ```
-/// 
+///
 /// ```gleam
 /// any([3, 4], fn(x) { x + 1 == 42 })
 /// // -> False
@@ -718,6 +812,8 @@ pub fn any(tree: ShineTree(u), f: fn(u) -> Bool) {
   }
 }
 
+/// This helper function checks if any element in a node, when called with
+/// a given predicate, returns `True`.
 fn any_node(node: Node(u), f: fn(u) -> Bool) {
   case node {
     One(a) -> f(a)
@@ -727,11 +823,20 @@ fn any_node(node: Node(u), f: fn(u) -> Bool) {
   }
 }
 
-fn any_rec(tree: ShineTree(u), f: fn(u) -> Bool) {
-  any(tree, f)
-}
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error
+const any_rec = any
 
-/// Returns `True` if the given value is contained in the given tree.
+/// Check a tree if it contains the given element.
+///
+/// ```gleam
+/// shine_tree.from_list([1, 2, 3])
+/// |> shine_tree.contains(2)
+/// // True
+/// ```
+//
+
 pub fn contains(tree: ShineTree(u), u) {
   use v <- any(tree)
   v == u
@@ -741,9 +846,9 @@ pub fn contains(tree: ShineTree(u), u) {
 ///
 /// This function has to traverse the entire tree to determine the number of elements,
 /// so it runs in linear time.
-/// 
+///
 /// ## Examples
-/// 
+///
 /// ```gleam
 /// count(shine_tree.from_list([2, 3, 4, 5, 6, 7, 8, 9, 10]), int.is_even)
 /// // -> 5
@@ -756,6 +861,8 @@ pub fn count(tree: ShineTree(u), where f: fn(u) -> Bool) {
   }
 }
 
+/// This helper function unwraps an Iterator value regardless of what
+/// `ContinueOrStop` variant it is.
 fn unwrap_fold_until(v: ContinueOrStop(v)) {
   case v {
     Stop(v) | Continue(v) -> v
@@ -784,11 +891,11 @@ pub fn filter_map(tree: ShineTree(u), f: fn(u) -> Result(b, c)) {
 
 /// Fold a given value over the items of a given tree, starting with the beginning until the
 /// given function returns `Stop`.
-/// 
+///
 /// The accumulated value is then returned.
-/// 
+///
 /// ## Examples
-/// 
+///
 /// ```gleam
 /// fold_until(shine_tree.from_list([2, 3, 4, 5, 6, 7, 8, 9, 10]), 0, fn(acc, x) {
 ///   case x {
@@ -802,9 +909,11 @@ pub fn fold_until(
   v,
   with f: fn(v, u) -> ContinueOrStop(v),
 ) -> v {
-  do_fold_until(tree, v, f) |> unwrap_fold_until
+  unwrap_fold_until(do_fold_until(tree, v, f))
 }
 
+/// This helper function folds a value over a tree, returning the last
+/// `Continue` or `Stop` value produced.
 fn do_fold_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case tree {
     Empty -> Continue(v)
@@ -820,8 +929,13 @@ fn do_fold_until(tree: ShineTree(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   }
 }
 
+/// TODO: This const is a means to bypass an unfortunate compiler error
+/// where recursively calling a function that is passed a ShineTree(Node(u))
+/// instead of a ShineTree(u) causes a type error
 const do_fold_until_rec = do_fold_until
 
+/// This helper function calls the given callback with the continue value if
+/// a folding operation should continue.
 fn try_continue(v: ContinueOrStop(v), f: fn(v) -> ContinueOrStop(v)) {
   case v {
     Continue(v) -> f(v)
@@ -829,6 +943,8 @@ fn try_continue(v: ContinueOrStop(v), f: fn(v) -> ContinueOrStop(v)) {
   }
 }
 
+/// This helper function folds over a node's values until the function
+/// returns `Stop(v)`.
 fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
   case node {
     One(a) -> f(v, a)
@@ -836,7 +952,6 @@ fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
       use v <- try_continue(f(v, a))
       f(v, b)
     }
-
     Three(a, b, c) -> {
       use v <- try_continue(f(v, a))
       use v <- try_continue(f(v, b))
@@ -853,13 +968,13 @@ fn do_fold_node_until(node: Node(u), v, f: fn(v, u) -> ContinueOrStop(v)) {
 
 /// Creates a tree of `n` consecutive integers, starting from `start`.
 /// and finishing with `finish`.
-/// 
+///
 /// ## Examples
-/// 
+///
 /// ```gleam
 /// let ten_items = shine_tree.range(1, 10)
 /// ```
-/// 
+///
 pub fn range(start: Int, finish: Int) {
   case finish - start {
     // TODO: make this algorithm backwards instead of calling reverse
@@ -932,49 +1047,50 @@ pub fn range(start: Int, finish: Int) {
   }
 }
 
+/// This helper function assembles a linked list of `Four` nodes with it's
+/// elements in the correct order, but the nodes themselves are reversed.
+/// It then assembles the `ShineTree(Node(Int))` by using the `to_list`
+/// algorithm, starting with the reversed list variant.
 fn do_deep_range(
   start: Int,
   finish: Int,
   acc: List(Node(Int)),
 ) -> ShineTree(Node(Int)) {
   case finish - start {
-    0 ->
-      [One(start), ..acc]
-      |> do_from_list_reverse
-    1 ->
-      [range_2(start), ..acc]
-      |> do_from_list_reverse
-    2 ->
-      [range_3(start), ..acc]
-      |> do_from_list_reverse
-    3 ->
-      [range_4(start), ..acc]
-      |> do_from_list_reverse
-    4 ->
-      [One(finish), range_4(finish - 4), ..acc]
-      |> do_from_list_reverse
+    0 -> do_from_list_reverse([One(start), ..acc])
+    1 -> do_from_list_reverse([range_2(start), ..acc])
+    2 -> do_from_list_reverse([range_3(start), ..acc])
+
+    3 -> do_from_list_reverse([range_4(start), ..acc])
+    4 -> do_from_list_reverse([One(finish), range_4(finish - 4), ..acc])
     _ -> do_deep_range(start + 4, finish, [range_4(start), ..acc])
   }
 }
 
+/// This helper function constructs a `Four` with four consecutive integers
+/// starting with `start`.
 fn range_4(start: Int) {
   Four(start, start + 1, start + 2, start + 3)
 }
 
+/// This helper function constructs a `Three` with three consecutive integers
+/// starting with `start`.
 fn range_3(start: Int) {
   Three(start, start + 1, start + 2)
 }
 
+/// This helper function constructs a `Two` with two consecutive integers
+/// starting with `start`.
 fn range_2(start: Int) {
   Two(start, start + 1)
 }
 
 /// Compares two trees for equality. Since trees can have many shapes, the items
 /// can be in the correct order and values, but the tree is balanced differently.
-/// 
+///
 /// This function reduces over the two trees and compares their values, immediately
 /// returning `False` if they are not equal.
-/// 
+///
 pub fn equals(a: ShineTree(u), b: ShineTree(u)) {
   case a, b {
     a, b if a == b -> True
@@ -995,13 +1111,17 @@ pub fn sort(tree: ShineTree(u), compare: fn(u, u) -> Order) -> ShineTree(u) {
       let assert Ok(#(pivot, tree)) = shift(tree)
       let #(left, right) = partition(tree, pivot, compare)
       let left = list.sort(left, compare)
-      let right = [pivot, ..list.sort(right, compare)]
-
-      list.append(left, right) |> from_list
+      let right = list.sort(right, compare)
+      from_list(left)
+      |> append(from_list([pivot, ..right]))
     }
   }
 }
 
+/// This helper partition function returns a tuple of lists like a normal
+/// quick_sort, but then defers back to the linked list sorting algorithm.
+/// As it turns out, the initial partition of a `ShineTree(u)` is faster
+/// than partitioning a linked list itself.
 fn partition(tree: ShineTree(u), pivot: u, compare: fn(u, u) -> Order) {
   use #(left, right), item <- fold_l(tree, #([], []))
   case compare(item, pivot) {
