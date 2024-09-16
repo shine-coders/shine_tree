@@ -45,10 +45,10 @@ pub type BenchConfiguration(u) {
 
 const default_bench_config = BenchConfiguration(
   max_iter: 8000,
-  min_iter: 1,
-  min_duration: 4000,
+  min_iter: 500,
+  min_duration: 2000,
   max_duration: 8000,
-  sample_count: 50,
+  sample_count: 30,
   elements: [],
 )
 
@@ -106,6 +106,9 @@ fn sort_samples(sample_list: List(Sample)) {
 }
 
 fn stats(samples: List(Sample), count: Int) {
+  io.println_error(
+    "  > Collecting Stats for " <> int.to_string(count) <> " samples...",
+  )
   let q1_idx = { count + 1 } / 4
   let median_idx = { count + 1 } / 2
   let q3_idx = { count + 1 } * 3 / 4
@@ -167,14 +170,16 @@ pub fn bench(
     elements,
   ) = config
   io.println_error("Using Configuration:")
-  io.println_error("Min Iterations:  " <> int.to_string(min_iter))
-  io.println_error("Max Iterations: " <> int.to_string(max_iter))
-  io.println_error("Min Duration: " <> int.to_string(min_duration))
-  io.println_error("Max Duration: " <> int.to_string(max_duration))
-  io.println_error("Sample Count: " <> int.to_string(sample_count))
+  io.println_error("  > Min Iterations:  " <> int.to_string(min_iter))
+  io.println_error("  > Max Iterations: " <> int.to_string(max_iter))
+  io.println_error("  > Min Duration: " <> int.to_string(min_duration))
+  io.println_error("  > Max Duration: " <> int.to_string(max_duration))
+  io.println_error("  > Sample Count: " <> int.to_string(sample_count))
 
   // for each data element
   use benchmarks, #(data_desc, data) <- list.fold(elements, benchmarks)
+  io.println_error("Performing benchmark using " <> data_desc)
+
   let samples = do_collect_samples(config, [], sample_count, f, data)
 
   // collect the statistics
@@ -213,7 +218,8 @@ fn do_collect_samples(
 ) {
   case samples_left {
     0 -> acc
-    _ ->
+    _ -> {
+      io.print_error(".")
       do_collect_samples(
         config,
         [do_collect_sample(config, f, data, now_ms(), 0), ..acc],
@@ -221,6 +227,7 @@ fn do_collect_samples(
         f,
         data,
       )
+    }
   }
 }
 
@@ -239,7 +246,7 @@ fn do_collect_sample(
   let crossed_max_duration = elapsed_duration >= config.max_duration
 
   case min_reached, crossed_min_duration, max_reached, crossed_max_duration {
-    True, True, _, True | True, True, True, _ ->
+    True, _, _, True | _, True, True, _ -> {
       Sample(
         start_time: start,
         end_time: now,
@@ -248,10 +255,19 @@ fn do_collect_sample(
           /. int.to_float(elapsed_duration)
           /. 1000.0,
       )
-    _, _, _, _ -> {
-      let _ = f(data)
-      do_collect_sample(config, f, data, start, count + 1)
     }
+    _, _, _, _ -> {
+      call_n_times(f, data, 100)
+      do_collect_sample(config, f, data, start, count + 100)
+    }
+  }
+}
+
+fn call_n_times(f: fn(data) -> u, data, n) {
+  let _ = f(data)
+  case n {
+    0 -> Nil
+    _ -> call_n_times(f, data, n - 1)
   }
 }
 

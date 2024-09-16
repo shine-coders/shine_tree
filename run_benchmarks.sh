@@ -1,5 +1,7 @@
 {
   printf "# ShineTree Benchmarks\n\n" ;
+  printf "## all\n\n" ;
+  gleam run -m benchmarks/all ;
   printf "## append\n\n" ;
   gleam run -m benchmarks/append ;
   printf "## count\n\n" ;
