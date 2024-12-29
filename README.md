@@ -51,12 +51,16 @@ Most of the list functions in the std library have been implemented along with m
 - unshift
 - from_list
 - to_list
-- from_iterator
-- TODO: to_iterator
 - TODO: to_set
 - TODO: sort
 
 Further documentation can be found at <https://hexdocs.pm/shine_tree>.
+
+## Iterator Deprecation
+
+Please note that the `gleam/iterator` module was deprecated and removed from the gleam stdlib. Thus,
+the corresponding functions have been removed from shine_tree. The version bump was a minor semver
+bump, and reflects a change in the API.
 
 ## License
 
