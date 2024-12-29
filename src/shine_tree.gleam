@@ -1,5 +1,4 @@
 import gleam/dict.{type Dict}
-import gleam/iterator.{type Iterator, Done, Next}
 import gleam/list.{type ContinueOrStop, Continue, Stop}
 import gleam/option.{None, Some}
 import gleam/order.{type Order, Gt}
@@ -311,32 +310,6 @@ fn shift_node(node: Node(u)) {
   }
 }
 
-/// Creates an iterator from a given tree, yielding each element in succession until
-/// there are no elements left.
-///
-/// ## Examples
-///
-/// ```gleam
-/// let iter = unfold(shine_tree.from_list([1, 2, 3]))
-/// 
-/// let #(num, iter) = iterator.step(iter)
-/// // -> Next(1, Iterator(Int))
-/// let #(num, iter) = iterator.step(iter)
-/// // -> Next(2, Iterator(Int))
-/// let #(num, iter) = iterator.step(iter)
-/// // -> Next(3, Iterator(Int))
-/// let a = iterator.step(iter)
-/// // -> Done
-/// ```
-///
-pub fn to_iterator(tree: ShineTree(u)) {
-  use state <- iterator.unfold(tree)
-  case shift(state) {
-    Ok(#(item, next)) -> Next(item, next)
-    Error(Nil) -> Done
-  }
-}
-
 /// Creates a new tree containing all the elements of the given tree,
 /// for which the given predicate returns `True`.
 /// 
@@ -514,62 +487,6 @@ fn do_chunk_values_reverse(items: List(u), acc: List(Node(u)), count: Int) {
     [a, b, c, d] -> #(Four(d, c, b, a), acc, count + 4)
     [a, b, c, d, ..rest] ->
       do_chunk_values_reverse(rest, [Four(d, c, b, a), ..acc], count + 4)
-  }
-}
-
-pub fn from_iterator(iterable: Iterator(u)) -> ShineTree(u) {
-  let node_iterator =
-    iterator.sized_chunk(iterable, 4)
-    |> iterator.map(to_node)
-
-  case iterator.step(node_iterator) {
-    Done -> Empty
-    Next(One(a), node_iterator) -> do_from_iterator(Single(a), node_iterator)
-    Next(Two(a, b), node_iterator) ->
-      do_from_iterator(Deep(2, One(a), Empty, One(b)), node_iterator)
-    Next(Three(a, b, c), node_iterator) ->
-      do_from_iterator(Deep(3, Two(a, b), Empty, One(c)), node_iterator)
-    Next(Four(a, b, c, d), node_iterator) ->
-      do_from_iterator(Deep(4, Two(a, b), Empty, Two(c, d)), node_iterator)
-  }
-}
-
-fn to_node(val: List(u)) {
-  case val {
-    [a] -> One(a)
-    [a, b] -> Two(a, b)
-    [a, b, c] -> Three(a, b, c)
-    [a, b, c, d] -> Four(a, b, c, d)
-    _ -> panic as "This is impossible!"
-  }
-}
-
-fn push_node(tree: ShineTree(u), node: Node(u)) -> ShineTree(u) {
-  case tree, node {
-    Empty, One(a) -> Single(a)
-    Empty, Two(a, b) -> Deep(2, One(a), Empty, One(b))
-    Empty, Three(a, b, c) -> Deep(3, One(a), Empty, Two(b, c))
-    Empty, Four(a, b, c, d) -> Deep(4, Two(a, b), Empty, Two(c, d))
-    Single(node), One(a) -> Deep(2, One(node), Empty, One(a))
-    Single(node), Two(a, b) -> Deep(3, Two(node, a), Empty, One(b))
-    Single(node), Three(a, b, c) -> Deep(4, Two(node, a), Empty, Two(b, c))
-    Single(node), Four(a, b, c, d) ->
-      Deep(5, Three(node, a, b), Empty, Two(c, d))
-    Deep(count, pr, body, sf), One(a) ->
-      Deep(count + 1, pr, body |> push(sf), One(a))
-    Deep(count, pr, body, sf), Two(a, b) ->
-      Deep(count + 2, pr, body |> push(sf), Two(a, b))
-    Deep(count, pr, body, sf), Three(a, b, c) ->
-      Deep(count + 3, pr, body |> push(sf), Three(a, b, c))
-    Deep(count, pr, body, sf), Four(a, b, c, d) ->
-      Deep(count + 4, pr, body |> push(sf), Four(a, b, c, d))
-  }
-}
-
-fn do_from_iterator(acc: ShineTree(u), rest: Iterator(Node(u))) -> ShineTree(u) {
-  case iterator.step(rest) {
-    Done -> acc
-    Next(node, rest) -> do_from_iterator(acc |> push_node(node), rest)
   }
 }
 
@@ -1209,7 +1126,7 @@ fn do_get_root(node: ShineTree(Node(u)), index: Int) {
     let assert Error(index) = index
     get_node(index, node)
   }
-  |> result.nil_error
+  |> result.replace_error(Nil)
 }
 
 fn get_node(index: Int, node: Node(u)) {

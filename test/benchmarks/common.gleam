@@ -2,7 +2,6 @@ import gleam/erlang
 import gleam/float
 import gleam/int
 import gleam/io
-import gleam/string_builder
 import humanise
 import shine_tree.{type ShineTree}
 
@@ -136,43 +135,37 @@ fn force_unwrap(n: Result(Float, b)) {
 }
 
 pub fn format_bench(results: ShineTree(BenchResults)) {
-  let builder =
-    string_builder.new()
-    |> string_builder.append("\n")
-    |> string_builder.append(
-      "| Name | Mean | Median | Std. | Min | Max | Iterations |\n",
-    )
-    |> string_builder.append("|---|---|---|---|---|---|---|\n")
   {
-    use builder, results <- shine_tree.fold_l(results, builder)
-
-    builder
-    |> string_builder.append("|")
-    |> string_builder.append(results.name)
-    |> string_builder.append("|")
-    |> string_builder.append(humanise.microseconds_float(results.mean))
-    |> string_builder.append("|")
-    |> string_builder.append(humanise.microseconds_int(results.median))
-    |> string_builder.append("|")
-    |> string_builder.append(
-      results.std_deviation
-      |> float.multiply(100.0)
-      |> float.round
-      |> int.to_float
-      |> float.divide(100.0)
-      |> force_unwrap
-      |> float.to_string,
+    use builder, results <- shine_tree.fold_l(
+      results,
+      "\n"
+        <> "| Name | Mean | Median | Std. | Min | Max | Iterations |\n"
+        <> "|---|---|---|---|---|---|---|\n",
     )
-    |> string_builder.append("|")
-    |> string_builder.append(humanise.microseconds_int(results.min))
-    |> string_builder.append("|")
-    |> string_builder.append(humanise.microseconds_int(results.max))
-    |> string_builder.append("|")
-    |> string_builder.append(int.to_string(results.count))
-    |> string_builder.append("|\n")
+    builder
+    <> "|"
+    <> results.name
+    <> "|"
+    <> humanise.microseconds_float(results.mean)
+    <> "|"
+    <> humanise.microseconds_int(results.median)
+    <> "|"
+    <> results.std_deviation
+    |> float.multiply(100.0)
+    |> float.round
+    |> int.to_float
+    |> float.divide(100.0)
+    |> force_unwrap
+    |> float.to_string
+    <> "|"
+    <> humanise.microseconds_int(results.min)
+    <> "|"
+    <> humanise.microseconds_int(results.max)
+    <> "|"
+    <> int.to_string(results.count)
+    <> "|\n"
   }
-  |> string_builder.append("\n\n")
-  |> string_builder.to_string
+  <> "\n\n"
 }
 
 pub fn push_shine_tree_nil(tree: ShineTree(Nil), count: Int) {
